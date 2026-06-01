@@ -25,7 +25,7 @@ state.
 
 ## Engineering Principles
 
-- YAGNI: do not add abstractions, services, frameworks, CI, docs sites, or 
+- YAGNI: do not add abstractions, services, frameworks, or 
 config until the current task needs them.
 - DRY pragmatically: remove meaningful duplication, but do not introduce 
 indirection that makes small code harder to understand.
