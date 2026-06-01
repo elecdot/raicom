@@ -1,0 +1,52 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Local env/secrets
+.env
+.env.*
+!.env.example
+*.local
+.venv/
+
+# Agent/local tool state
+.cache/
+.codex/
+.aider*
+tmp/*
+!tmp/README.md
+!tmp/.gitignore
+
+# Python/build caches
+__pycache__/
+*.py[oc]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Logs/runtime
+*.log
+*.tmp
+*.bak
+*.out
+*.err
+
+# Generated outputs
+outputs/*
+!outputs/README.md
+
+# Large files
+*.bin
+*.zip
+*.tar.gz
+*.pdf
+*.docx
+*.xlsx
+*.pptx
