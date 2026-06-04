@@ -11,8 +11,8 @@ human-assisted automation.
 - Keep changes small, reviewable, and scoped to the request.
 - Preserve user changes already present in the worktree.
 - The root `README.md` serves as the primary entry point.
-Additionally, each directory maintains its own `README.md` file to index its 
-contents and define local conventions for that specific subtree.
+- Important subtrees should have a local `README.md` when they need an entry
+point, index, rules, or conventions to stay readable and maintainable.
 
 ## Commands And Tooling
 
@@ -56,7 +56,9 @@ A change is done when:
 
 - The requested behavior is implemented end to end, not only sketched.
 - Relevant docs, README entries, commands, or conventions are updated.
-- Relevant validation was run, or the reason for skipping is stated.
-- No unrelated rewrites, generated artifacts, local secrets, or temporary 
-cache files are included.
-- Remaining risks, unknowns, or follow-up work are explicit.
+- Validation appropriate to the change was run, or the reason for skipping is
+stated.
+- No unrelated rewrites, local secrets, or temporary, cache, or generated files
+are exposed to git.
+- Remaining risks, unknowns, or follow-up work are explicit in the final
+response.

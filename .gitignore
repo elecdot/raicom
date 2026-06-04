@@ -38,10 +38,6 @@ dist/
 *.out
 *.err
 
-# Generated outputs
-outputs/*
-!outputs/README.md
-
 # Large files
 *.bin
 *.zip

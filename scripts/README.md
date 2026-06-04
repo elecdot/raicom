@@ -10,7 +10,11 @@ Small helper scripts used by documented repository commands live here.
 - Prefer scripts that support `justfile` recipes over one-off manual workflows.
 - Avoid machine-specific absolute paths, local secrets, and hidden network dependencies.
 - Agent-facing scripts must write caches and temporary files inside the workspace.
+- Keep `agent-env.sh` lightweight and generic. Add tool-specific cache variables
+only when the template or project has a concrete reason to support that tool.
 
 ## Current Scripts
 
-- `agent-env.sh`: runs a command with workspace-local cache defaults such as `.cache/` and `.cache/uv/`.
+- `agent-env.sh`: runs a command with workspace-local cache defaults such as
+`.cache/` and `.cache/uv/`; `UV_CACHE_DIR` is included for possible Python
+helper scripts.

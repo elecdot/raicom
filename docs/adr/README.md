@@ -5,17 +5,15 @@ Use this directory for decisions that are hard to reverse, surprising, or based 
 Suggested filename:
 
 ```text
-YYYY-MM-DD-short-title.md
+0001-short-title.md
 ```
+
+Use the next sequential number when adding a new ADR.
 
 Suggested shape:
 
 ```md
 # <Decision Title>
 
-## Context
-
-## Decision
-
-## Consequences
+One to three sentences describing the context, decision, and reason.
 ```
