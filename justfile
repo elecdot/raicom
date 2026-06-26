@@ -34,6 +34,10 @@ train *args:
 audit-errors run *args:
     @python scripts/audit-val-predictions.py {{run}} {{args}}
 
+# Summarize stable validation errors across fixed-split EfficientNet-B0 runs.
+stable-error-pool *args:
+    @./scripts/agent-env.sh uv run python scripts/summarize-val-error-overlap.py {{args}}
+
 # Smoke-test the platform predict interface in the active runtime.
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}

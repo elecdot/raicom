@@ -62,3 +62,13 @@ def test_validation_error_audit_command_is_documented():
 
     assert "audit-errors" in justfile
     assert "audit-val-predictions.py" in scripts_readme
+
+
+def test_stable_error_pool_command_is_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+    docs_readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+
+    assert "stable-error-pool" in justfile
+    assert "summarize-val-error-overlap.py" in scripts_readme
+    assert "diagnostics/" in docs_readme

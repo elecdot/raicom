@@ -28,3 +28,5 @@ manual Submission Confirmation checklist.
 `results/model_sample.pth` artifact in the active runtime.
 - `audit-val-predictions.py`: creates a compact high-confidence validation error
 audit pack from an Experiment Run's `val_predictions.csv`.
+- `summarize-val-error-overlap.py`: creates a stable validation error pool
+diagnostic report from comparable Experiment Runs.
