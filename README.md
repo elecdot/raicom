@@ -41,7 +41,7 @@ explicit pip-managed dependency sets:
 | `justfile` | Main command entry point. |
 | `main.py` | Platform-facing prediction entry point. |
 | `models/` | Model Candidate definitions and registry. |
-| `train.py` | Baseline training script. |
+| `train.py` | Model Candidate training script. |
 | `results/` | Canonical model artifact directory used by training and submission code. |
 | `requirements.txt` | pip runtime dependency set for platform runs. |
 | `requirements-train-cu124.txt` | pip dependency set for CUDA 12.4 training runs. |
@@ -62,7 +62,7 @@ just check        # run lightweight non-training checks
 just fmt          # format maintained Python sources
 just lint         # lint maintained Python sources
 just test         # run lightweight pytest tests
-just train        # run baseline training in the active GPU runtime
+just train        # run default Model Candidate training in the active GPU runtime
 just promote-submission <artifact> # promote a model artifact for platform loading
 just confirm-submission # print the pre-submission checklist
 just smoke-predict # validate predict() after a model artifact exists
@@ -72,7 +72,7 @@ just agent <cmd>  # run a command with workspace-local caches
 ## Current State
 
 - The official tutorial is available as `tutorial.ipynb` and paired `tutorial.py`.
-- `models/` contains Model Candidate definitions; `baseline_cnn` is the first registered candidate.
+- `models/` contains Model Candidate definitions; `efficientnet_b0` is the default candidate and `baseline_cnn` remains available as a sanity comparator.
 - `main.py` remains self-contained for platform submission.
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
 - Model artifacts are saved under `results/`; the submitted prediction code loads from this directory.
@@ -80,7 +80,8 @@ just agent <cmd>  # run a command with workspace-local caches
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, lint, lightweight tests, Python syntax, and local training data layout without installing model runtime dependencies or training.
-- `train.py` is a CLI training driver with `baseline_cnn` as the default Model Candidate; `just train` requires CUDA and writes an Experiment Run under `results/runs/<run-id>/` by default.
+- `train.py` is a CLI training driver with `efficientnet_b0` as the default Model Candidate; `just train` requires CUDA and writes an Experiment Run under `results/runs/<run-id>/` by default.
+- The current training mainline uses TorchVision candidates and does not introduce `timm` as a runtime dependency.
 - `just promote-submission <artifact>` copies a selected Model Artifact to the fixed Submission Artifact path: `results/model_sample.pth`.
 - `just confirm-submission` checks for the Submission Artifact and prints the manual Submission Confirmation checklist.
 - `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
@@ -90,9 +91,9 @@ just agent <cmd>  # run a command with workspace-local caches
 The initialization work is moving toward a Model Candidate workflow:
 
 - `train.py` remains the single training entry point.
-- `models/` holds Model Candidate definitions, starting with `baseline_cnn`.
+- `models/` holds Model Candidate definitions, starting with `baseline_cnn` and the first TorchVision strong baseline.
 - Each `just train` run creates an Experiment Run under `results/runs/<run-id>/`.
-- Each Experiment Run writes `model.pth`, `metadata.json`, and `metrics.json`.
+- Each Experiment Run writes `model.pth`, `metadata.json`, `metrics.json`, and `val_predictions.csv`.
 - `model.pth` contains the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
 - `docs/experiments/README.md` is the manual review log for notable Experiment Runs.
 - `just promote-submission <artifact>` makes a selected Model Artifact the fixed Submission Artifact at `results/model_sample.pth`.

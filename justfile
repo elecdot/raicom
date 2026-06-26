@@ -26,7 +26,7 @@ check:
     @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
     @just test
 
-# Run baseline training in the active Python runtime.
+# Run default Model Candidate training in the active Python runtime.
 train *args:
     @python train.py --require-cuda {{args}}
 

@@ -1,13 +1,20 @@
 import argparse
+import csv
 import json
-from pathlib import Path
+from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import f1_score
-from torch.utils.data import DataLoader, random_split
+from sklearn.metrics import (
+    confusion_matrix,
+    f1_score,
+    precision_recall_fscore_support,
+)
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 from models.registry import available_model_candidates, get_model_candidate
@@ -15,7 +22,17 @@ from models.registry import available_model_candidates, get_model_candidate
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_TRAIN_DIR = REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
 DEFAULT_RUNS_DIR = REPO_ROOT / "results/runs"
-DEFAULT_MODEL = "baseline_cnn"
+DEFAULT_MODEL = "efficientnet_b0"
+
+
+@dataclass(frozen=True)
+class LoaderBundle:
+    train_loader: DataLoader
+    val_loader: DataLoader
+    class_to_idx: dict[str, int]
+    train_counts: dict[str, int]
+    val_counts: dict[str, int]
+    val_paths: list[str]
 
 
 def parse_args():
@@ -26,6 +43,13 @@ def parse_args():
         default=DEFAULT_MODEL,
         help="Model Candidate to train.",
     )
+    parser.add_argument(
+        "--no-pretrained",
+        dest="pretrained",
+        action="store_false",
+        help="Disable pretrained weights for candidates that support them.",
+    )
+    parser.set_defaults(pretrained=True)
     parser.add_argument("--train-dir", type=Path, default=DEFAULT_TRAIN_DIR)
     parser.add_argument(
         "--run-id",
@@ -44,11 +68,56 @@ def parse_args():
         help="Override the selected Model Candidate image size.",
     )
     parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--epochs", type=int, default=15)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--val-ratio", type=float, default=0.1)
+    parser.add_argument("--epochs", type=int, default=25)
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--val-ratio", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument(
+        "--optimizer",
+        choices=("adam", "adamw"),
+        default="adamw",
+        help="Optimizer to use.",
+    )
+    parser.add_argument(
+        "--scheduler",
+        choices=("none", "cosine"),
+        default="cosine",
+        help="Learning-rate scheduler to use.",
+    )
+    parser.add_argument(
+        "--early-stopping-patience",
+        type=int,
+        default=7,
+        help="Stop after this many epochs without val Macro F1 improvement. Use 0 to disable.",
+    )
+    parser.add_argument(
+        "--augmentation",
+        choices=("none", "mild"),
+        default="mild",
+        help="Training augmentation recipe.",
+    )
+    parser.add_argument(
+        "--class-weights",
+        choices=("none", "inverse", "inverse-sqrt"),
+        default="inverse-sqrt",
+        help="Class weighting strategy for CrossEntropyLoss.",
+    )
+    parser.add_argument("--label-smoothing", type=float, default=0.05)
+    parser.add_argument(
+        "--amp",
+        dest="amp",
+        action="store_true",
+        default=None,
+        help="Enable CUDA automatic mixed precision.",
+    )
+    parser.add_argument(
+        "--no-amp",
+        dest="amp",
+        action="store_false",
+        help="Disable automatic mixed precision.",
+    )
     parser.add_argument(
         "--device",
         choices=("auto", "cuda", "cpu"),
@@ -61,6 +130,17 @@ def parse_args():
         help="Fail fast unless the resolved training device is CUDA.",
     )
     return parser.parse_args()
+
+
+def validate_args(args):
+    if not 0 < args.val_ratio < 1:
+        raise ValueError("--val-ratio must be between 0 and 1")
+    if args.epochs < 1:
+        raise ValueError("--epochs must be at least 1")
+    if args.batch_size < 1:
+        raise ValueError("--batch-size must be at least 1")
+    if args.label_smoothing < 0:
+        raise ValueError("--label-smoothing must be non-negative")
 
 
 def default_run_id(model_candidate, seed):
@@ -84,38 +164,117 @@ def resolve_device(device_name):
     return device
 
 
-def build_loaders(args, candidate, device):
+def resolve_amp(amp_arg, device):
+    if amp_arg is None:
+        return device.type == "cuda"
+    return bool(amp_arg and device.type == "cuda")
+
+
+def relative(path):
+    path = Path(path)
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def interpolation_mode(name):
+    modes = {
+        "bilinear": transforms.InterpolationMode.BILINEAR,
+        "bicubic": transforms.InterpolationMode.BICUBIC,
+    }
+    try:
+        return modes[name]
+    except KeyError as exc:
+        choices = ", ".join(sorted(modes))
+        raise ValueError(
+            f"unknown interpolation {name!r}; choose one of: {choices}"
+        ) from exc
+
+
+def build_transforms(args, candidate):
     image_size = args.image_size or candidate.image_size
-    tf = transforms.Compose(
+    interpolation = interpolation_mode(candidate.interpolation)
+    normalize = transforms.Normalize(mean=candidate.mean, std=candidate.std)
+    eval_transform = transforms.Compose(
         [
-            transforms.Resize((image_size, image_size)),
+            transforms.Resize((image_size, image_size), interpolation=interpolation),
             transforms.ToTensor(),
+            normalize,
         ]
     )
+    if args.augmentation == "none":
+        train_transform = eval_transform
+    else:
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    image_size,
+                    scale=(0.75, 1.0),
+                    ratio=(0.9, 1.1),
+                    interpolation=interpolation,
+                ),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.ColorJitter(
+                    brightness=0.15,
+                    contrast=0.15,
+                    saturation=0.10,
+                    hue=0.02,
+                ),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
+    return train_transform, eval_transform
 
-    full_set = datasets.ImageFolder(args.train_dir, transform=tf)
-    actual_labels = [
+
+def ordered_labels(image_folder):
+    return [
         label
         for label, _ in sorted(
-            full_set.class_to_idx.items(),
+            image_folder.class_to_idx.items(),
             key=lambda item: item[1],
         )
     ]
+
+
+def count_by_class(targets, indices, labels):
+    counts = {label: 0 for label in labels}
+    for index in indices:
+        counts[labels[targets[index]]] += 1
+    return counts
+
+
+def build_loaders(args, candidate, device):
+    train_transform, eval_transform = build_transforms(args, candidate)
+    train_full_set = datasets.ImageFolder(args.train_dir, transform=train_transform)
+    eval_full_set = datasets.ImageFolder(args.train_dir, transform=eval_transform)
+    actual_labels = ordered_labels(eval_full_set)
     expected_labels = list(candidate.labels)
     if actual_labels != expected_labels:
         raise RuntimeError(
             f"unexpected class order: {actual_labels}; expected {expected_labels}"
         )
-    print("class_to_idx:", full_set.class_to_idx)
+    print("class_to_idx:", eval_full_set.class_to_idx)
 
-    n_val = int(len(full_set) * args.val_ratio)
-    n_train = len(full_set) - n_val
-    train_set, val_set = random_split(
-        full_set,
-        [n_train, n_val],
-        generator=torch.Generator().manual_seed(args.seed),
+    splitter = StratifiedShuffleSplit(
+        n_splits=1,
+        test_size=args.val_ratio,
+        random_state=args.seed,
     )
+    indices = list(range(len(eval_full_set.targets)))
+    train_indices, val_indices = next(splitter.split(indices, eval_full_set.targets))
+    train_indices = train_indices.tolist()
+    val_indices = val_indices.tolist()
 
+    train_set = Subset(train_full_set, train_indices)
+    val_set = Subset(eval_full_set, val_indices)
     pin_memory = device.type == "cuda"
     train_loader = DataLoader(
         train_set,
@@ -131,25 +290,126 @@ def build_loaders(args, candidate, device):
         num_workers=args.num_workers,
         pin_memory=pin_memory,
     )
-    return train_loader, val_loader
+    return LoaderBundle(
+        train_loader=train_loader,
+        val_loader=val_loader,
+        class_to_idx=eval_full_set.class_to_idx,
+        train_counts=count_by_class(
+            eval_full_set.targets, train_indices, actual_labels
+        ),
+        val_counts=count_by_class(eval_full_set.targets, val_indices, actual_labels),
+        val_paths=[relative(eval_full_set.samples[index][0]) for index in val_indices],
+    )
 
 
-def evaluate(model, loader, criterion, device):
+def build_class_weights(strategy, train_counts, labels, device):
+    if strategy == "none":
+        return None, {label: 1.0 for label in labels}
+
+    raw_weights = []
+    for label in labels:
+        count = train_counts[label]
+        if count <= 0:
+            raise RuntimeError(f"class {label!r} has no training samples")
+        if strategy == "inverse":
+            raw_weights.append(1.0 / count)
+        elif strategy == "inverse-sqrt":
+            raw_weights.append(count**-0.5)
+        else:
+            raise ValueError(f"unknown class weight strategy: {strategy}")
+
+    mean_weight = sum(raw_weights) / len(raw_weights)
+    weights = [weight / mean_weight for weight in raw_weights]
+    weight_by_label = dict(zip(labels, weights))
+    return torch.tensor(weights, dtype=torch.float32, device=device), weight_by_label
+
+
+def build_optimizer(args, model):
+    if args.optimizer == "adam":
+        return optim.Adam(
+            model.parameters(),
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+        )
+    if args.optimizer == "adamw":
+        return optim.AdamW(
+            model.parameters(),
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+        )
+    raise ValueError(f"unknown optimizer: {args.optimizer}")
+
+
+def build_scheduler(args, optimizer):
+    if args.scheduler == "none":
+        return None
+    if args.scheduler == "cosine":
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    raise ValueError(f"unknown scheduler: {args.scheduler}")
+
+
+def summarize_predictions(y_true, y_pred, labels):
+    label_ids = list(range(len(labels)))
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true,
+        y_pred,
+        labels=label_ids,
+        zero_division=0,
+    )
+    per_class = {}
+    for index, label in enumerate(labels):
+        per_class[label] = {
+            "precision": float(precision[index]),
+            "recall": float(recall[index]),
+            "f1": float(f1[index]),
+            "support": int(support[index]),
+        }
+    return {
+        "per_class": per_class,
+        "confusion_matrix": confusion_matrix(
+            y_true,
+            y_pred,
+            labels=label_ids,
+        ).tolist(),
+    }
+
+
+def evaluate(model, loader, criterion, device, amp_enabled, record_logits=False):
     model.eval()
     total, correct, loss_sum = 0, 0, 0.0
-    y_true, y_pred = [], []
-    with torch.no_grad():
+    y_true, y_pred, logits = [], [], []
+    with torch.inference_mode():
         for x, y in loader:
             x, y = x.to(device), y.to(device)
-            out = model(x)
-            loss_sum += criterion(out, y).item() * x.size(0)
+            with torch.autocast(device_type=device.type, enabled=amp_enabled):
+                out = model(x)
+                loss = criterion(out, y)
+            loss_sum += loss.item() * x.size(0)
             pred = out.argmax(dim=1)
             correct += (pred == y).sum().item()
             total += x.size(0)
             y_true.extend(y.cpu().tolist())
             y_pred.extend(pred.cpu().tolist())
-    macro_f1 = f1_score(y_true, y_pred, average="macro")
-    return loss_sum / total, correct / total, macro_f1
+            if record_logits:
+                logits.extend(out.detach().float().cpu().tolist())
+
+    macro_f1 = f1_score(
+        y_true,
+        y_pred,
+        labels=list(range(len(loader.dataset.dataset.classes))),
+        average="macro",
+        zero_division=0,
+    )
+    result = {
+        "loss": loss_sum / total,
+        "accuracy": correct / total,
+        "macro_f1": macro_f1,
+        "y_true": y_true,
+        "y_pred": y_pred,
+    }
+    if record_logits:
+        result["logits"] = logits
+    return result
 
 
 def state_dict_snapshot(model):
@@ -165,97 +425,256 @@ def write_json(path, payload):
     )
 
 
+def write_val_predictions(path, val_paths, eval_result, labels):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    logits = eval_result["logits"]
+    logits_tensor = torch.tensor(logits, dtype=torch.float32)
+    confidences = torch.softmax(logits_tensor, dim=1).max(dim=1).values.tolist()
+    fieldnames = [
+        "path",
+        "true_label",
+        "pred_label",
+        "correct",
+        "confidence",
+    ] + [f"logit_{label}" for label in labels]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for index, image_path in enumerate(val_paths):
+            true_index = eval_result["y_true"][index]
+            pred_index = eval_result["y_pred"][index]
+            row = {
+                "path": image_path,
+                "true_label": labels[true_index],
+                "pred_label": labels[pred_index],
+                "correct": int(true_index == pred_index),
+                "confidence": confidences[index],
+            }
+            for label, logit in zip(labels, logits[index]):
+                row[f"logit_{label}"] = logit
+            writer.writerow(row)
+
+
+def train_one_epoch(model, loader, criterion, optimizer, scaler, device, amp_enabled):
+    model.train()
+    running_loss, total, correct = 0.0, 0, 0
+    for x, y in loader:
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(device_type=device.type, enabled=amp_enabled):
+            out = model(x)
+            loss = criterion(out, y)
+
+        if amp_enabled:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
+
+        running_loss += loss.item() * x.size(0)
+        correct += (out.argmax(dim=1) == y).sum().item()
+        total += x.size(0)
+    return running_loss / total, correct / total
+
+
 def train(args):
+    validate_args(args)
+    set_seed(args.seed)
     candidate = get_model_candidate(args.model)
     image_size = args.image_size or candidate.image_size
     run_id, run_dir, artifact_path = resolve_run_paths(args, candidate)
     metrics_path = run_dir / "metrics.json"
     metadata_path = run_dir / "metadata.json"
+    val_predictions_path = run_dir / "val_predictions.csv"
     device = resolve_device(args.device)
+    amp_enabled = resolve_amp(args.amp, device)
     if args.require_cuda and device.type != "cuda":
         raise RuntimeError("CUDA is required for this training run.")
+
+    pretrained = bool(args.pretrained and candidate.pretrained_weights_name)
     print("run_id:", run_id)
     print("model:", candidate.name)
+    print("pretrained:", pretrained)
     print("device:", device)
+    print("amp_enabled:", amp_enabled)
     print("image_size:", image_size)
     print("train_dir:", args.train_dir)
     print("run_dir:", run_dir)
     print("output:", artifact_path)
 
-    train_loader, val_loader = build_loaders(args, candidate, device)
-    model = candidate.build_model().to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    metrics = []
+    loaders = build_loaders(args, candidate, device)
+    labels = list(candidate.labels)
+    class_weight_tensor, class_weights = build_class_weights(
+        args.class_weights,
+        loaders.train_counts,
+        labels,
+        device,
+    )
+    model = candidate.build_model(pretrained=pretrained).to(device)
+    criterion = nn.CrossEntropyLoss(
+        weight=class_weight_tensor,
+        label_smoothing=args.label_smoothing,
+    )
+    optimizer = build_optimizer(args, model)
+    scheduler = build_scheduler(args, optimizer)
+    scaler = torch.amp.GradScaler("cuda", enabled=amp_enabled)
+    epoch_metrics = []
     best_epoch = None
     best_val_macro_f1 = None
+    best_val_accuracy = None
     best_state = None
     final_val_macro_f1 = None
+    epochs_without_improvement = 0
+
+    print("train_counts:", loaders.train_counts)
+    print("val_counts:", loaders.val_counts)
+    print("class_weights:", class_weights)
 
     for epoch in range(1, args.epochs + 1):
-        model.train()
-        running_loss, total, correct = 0.0, 0, 0
-        for x, y in train_loader:
-            x, y = x.to(device), y.to(device)
-            optimizer.zero_grad()
-            out = model(x)
-            loss = criterion(out, y)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item() * x.size(0)
-            correct += (out.argmax(dim=1) == y).sum().item()
-            total += x.size(0)
-        train_loss = running_loss / total
-        train_acc = correct / total
-        val_loss, val_acc, val_macro_f1 = evaluate(model, val_loader, criterion, device)
-        final_val_macro_f1 = val_macro_f1
-        metrics.append(
+        current_lr = optimizer.param_groups[0]["lr"]
+        train_loss, train_acc = train_one_epoch(
+            model,
+            loaders.train_loader,
+            criterion,
+            optimizer,
+            scaler,
+            device,
+            amp_enabled,
+        )
+        val_result = evaluate(
+            model,
+            loaders.val_loader,
+            criterion,
+            device,
+            amp_enabled,
+        )
+        if scheduler is not None:
+            scheduler.step()
+
+        final_val_macro_f1 = val_result["macro_f1"]
+        epoch_metrics.append(
             {
                 "epoch": epoch,
+                "lr": current_lr,
                 "train_loss": train_loss,
                 "train_acc": train_acc,
-                "val_loss": val_loss,
-                "val_acc": val_acc,
-                "val_macro_f1": val_macro_f1,
+                "val_loss": val_result["loss"],
+                "val_acc": val_result["accuracy"],
+                "val_macro_f1": val_result["macro_f1"],
             }
         )
-        if best_val_macro_f1 is None or val_macro_f1 > best_val_macro_f1:
+        improved = (
+            best_val_macro_f1 is None or val_result["macro_f1"] > best_val_macro_f1
+        )
+        if improved:
             best_epoch = epoch
-            best_val_macro_f1 = val_macro_f1
+            best_val_macro_f1 = val_result["macro_f1"]
+            best_val_accuracy = val_result["accuracy"]
             best_state = state_dict_snapshot(model)
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
+
         print(
             f"Epoch {epoch}/{args.epochs}  "
+            f"lr={current_lr:.6g}  "
             f"train_loss={train_loss:.4f}  train_acc={train_acc:.4f}  "
-            f"val_loss={val_loss:.4f}  val_acc={val_acc:.4f}  "
-            f"val_macro_f1={val_macro_f1:.4f}"
+            f"val_loss={val_result['loss']:.4f}  "
+            f"val_acc={val_result['accuracy']:.4f}  "
+            f"val_macro_f1={val_result['macro_f1']:.4f}"
         )
 
+        if (
+            args.early_stopping_patience > 0
+            and epochs_without_improvement >= args.early_stopping_patience
+        ):
+            print(
+                "early stopping:",
+                f"no val_macro_f1 improvement for {epochs_without_improvement} epochs",
+            )
+            break
+
+    model.load_state_dict(best_state)
+    best_eval = evaluate(
+        model,
+        loaders.val_loader,
+        criterion,
+        device,
+        amp_enabled,
+        record_logits=True,
+    )
+    best_summary = summarize_predictions(
+        best_eval["y_true"],
+        best_eval["y_pred"],
+        labels,
+    )
     run_dir.mkdir(parents=True, exist_ok=True)
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(best_state, artifact_path)
-    write_json(metrics_path, {"epochs": metrics})
+    write_val_predictions(val_predictions_path, loaders.val_paths, best_eval, labels)
+    write_json(
+        metrics_path,
+        {
+            "epochs": epoch_metrics,
+            "best_epoch": best_epoch,
+            "best": {
+                "val_loss": best_eval["loss"],
+                "val_acc": best_eval["accuracy"],
+                "val_macro_f1": best_eval["macro_f1"],
+                "per_class": best_summary["per_class"],
+                "confusion_matrix": best_summary["confusion_matrix"],
+            },
+        },
+    )
     write_json(
         metadata_path,
         {
             "run_id": run_id,
             "model_candidate": candidate.name,
+            "labels": labels,
             "seed": args.seed,
             "image_size": image_size,
-            "epochs": args.epochs,
+            "epochs_requested": args.epochs,
+            "epochs_completed": len(epoch_metrics),
             "batch_size": args.batch_size,
             "lr": args.lr,
+            "weight_decay": args.weight_decay,
+            "optimizer": args.optimizer,
+            "scheduler": args.scheduler,
+            "early_stopping_patience": args.early_stopping_patience,
+            "augmentation": args.augmentation,
+            "class_weighting": args.class_weights,
+            "class_weights": class_weights,
+            "label_smoothing": args.label_smoothing,
+            "split_strategy": "stratified_shuffle",
             "val_ratio": args.val_ratio,
+            "train_counts_by_class": loaders.train_counts,
+            "val_counts_by_class": loaders.val_counts,
             "train_dir": str(args.train_dir),
             "device": str(device),
+            "amp_requested": "auto" if args.amp is None else bool(args.amp),
+            "amp_enabled": amp_enabled,
+            "pretrained": pretrained,
+            "pretrained_weights_name": candidate.pretrained_weights_name,
+            "preprocessing": {
+                "mean": candidate.mean,
+                "std": candidate.std,
+                "interpolation": candidate.interpolation,
+            },
             "best_epoch": best_epoch,
             "best_val_macro_f1": best_val_macro_f1,
+            "best_val_accuracy": best_val_accuracy,
             "final_val_macro_f1": final_val_macro_f1,
             "artifact": str(artifact_path),
             "metrics": str(metrics_path),
+            "val_predictions": str(val_predictions_path),
         },
     )
     print("best_epoch:", best_epoch)
     print("best_val_macro_f1:", f"{best_val_macro_f1:.4f}")
+    print("val_predictions:", relative(val_predictions_path))
 
 
 if __name__ == "__main__":

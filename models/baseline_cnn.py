@@ -31,5 +31,7 @@ class WeatherCNN(nn.Module):
         return self.classifier(self.features(x))
 
 
-def build_model():
+def build_model(pretrained=False):
+    if pretrained:
+        raise ValueError("baseline_cnn does not support pretrained weights")
     return WeatherCNN(num_classes=len(LABELS))
