@@ -38,6 +38,9 @@ dist/
 *.out
 *.err
 
+# Data
+datasets/
+
 # Large files
 *.bin
 *.zip
