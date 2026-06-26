@@ -44,7 +44,7 @@ explicitly and compare both runtime and Internal Validation Macro F1 before
 adopting them as a repeatable experiment:
 
 ```bash
-just train --batch-size 64 --num-workers 4 --persistent-workers
+just train --batch-size 32 --num-workers 4 --persistent-workers
 ```
 
 Training metrics record epoch seconds, images per second, and peak CUDA memory
