@@ -38,6 +38,10 @@ def test_training_writes_experiment_run_outputs():
     assert "metrics.json" in train_source
     assert "val_predictions.csv" in train_source
     assert "best_val_macro_f1" in train_source
+    assert "num_workers" in train_source
+    assert "prefetch_factor" in train_source
+    assert "train_seconds" in train_source
+    assert "peak_cuda_memory_allocated" in train_source
 
 
 def test_submission_flow_commands_are_documented():

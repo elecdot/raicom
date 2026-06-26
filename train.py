@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -75,6 +76,17 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument(
+        "--prefetch-factor",
+        type=int,
+        default=2,
+        help="DataLoader prefetch factor when --num-workers is greater than 0.",
+    )
+    parser.add_argument(
+        "--persistent-workers",
+        action="store_true",
+        help="Keep DataLoader worker processes alive across epochs.",
+    )
+    parser.add_argument(
         "--optimizer",
         choices=("adam", "adamw"),
         default="adamw",
@@ -139,6 +151,12 @@ def validate_args(args):
         raise ValueError("--epochs must be at least 1")
     if args.batch_size < 1:
         raise ValueError("--batch-size must be at least 1")
+    if args.num_workers < 0:
+        raise ValueError("--num-workers must be non-negative")
+    if args.prefetch_factor < 1:
+        raise ValueError("--prefetch-factor must be at least 1")
+    if args.persistent_workers and args.num_workers == 0:
+        raise ValueError("--persistent-workers requires --num-workers greater than 0")
     if args.label_smoothing < 0:
         raise ValueError("--label-smoothing must be non-negative")
 
@@ -276,12 +294,19 @@ def build_loaders(args, candidate, device):
     train_set = Subset(train_full_set, train_indices)
     val_set = Subset(eval_full_set, val_indices)
     pin_memory = device.type == "cuda"
+    train_generator = torch.Generator().manual_seed(args.seed)
+    worker_kwargs = {}
+    if args.num_workers > 0:
+        worker_kwargs["prefetch_factor"] = args.prefetch_factor
+        worker_kwargs["persistent_workers"] = args.persistent_workers
     train_loader = DataLoader(
         train_set,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
         pin_memory=pin_memory,
+        generator=train_generator,
+        **worker_kwargs,
     )
     val_loader = DataLoader(
         val_set,
@@ -289,6 +314,7 @@ def build_loaders(args, candidate, device):
         shuffle=False,
         num_workers=args.num_workers,
         pin_memory=pin_memory,
+        **worker_kwargs,
     )
     return LoaderBundle(
         train_loader=train_loader,
@@ -378,9 +404,11 @@ def evaluate(model, loader, criterion, device, amp_enabled, record_logits=False)
     model.eval()
     total, correct, loss_sum = 0, 0, 0.0
     y_true, y_pred, logits = [], [], []
+    non_blocking = device.type == "cuda"
     with torch.inference_mode():
         for x, y in loader:
-            x, y = x.to(device), y.to(device)
+            x = x.to(device, non_blocking=non_blocking)
+            y = y.to(device, non_blocking=non_blocking)
             with torch.autocast(device_type=device.type, enabled=amp_enabled):
                 out = model(x)
                 loss = criterion(out, y)
@@ -458,8 +486,10 @@ def write_val_predictions(path, val_paths, eval_result, labels):
 def train_one_epoch(model, loader, criterion, optimizer, scaler, device, amp_enabled):
     model.train()
     running_loss, total, correct = 0.0, 0, 0
+    non_blocking = device.type == "cuda"
     for x, y in loader:
-        x, y = x.to(device), y.to(device)
+        x = x.to(device, non_blocking=non_blocking)
+        y = y.to(device, non_blocking=non_blocking)
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=device.type, enabled=amp_enabled):
             out = model(x)
@@ -480,6 +510,7 @@ def train_one_epoch(model, loader, criterion, optimizer, scaler, device, amp_ena
 
 
 def train(args):
+    run_start = time.perf_counter()
     validate_args(args)
     set_seed(args.seed)
     candidate = get_model_candidate(args.model)
@@ -513,6 +544,8 @@ def train(args):
         device,
     )
     model = candidate.build_model(pretrained=pretrained).to(device)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     criterion = nn.CrossEntropyLoss(
         weight=class_weight_tensor,
         label_smoothing=args.label_smoothing,
@@ -533,7 +566,9 @@ def train(args):
     print("class_weights:", class_weights)
 
     for epoch in range(1, args.epochs + 1):
+        epoch_start = time.perf_counter()
         current_lr = optimizer.param_groups[0]["lr"]
+        train_start = time.perf_counter()
         train_loss, train_acc = train_one_epoch(
             model,
             loaders.train_loader,
@@ -543,6 +578,8 @@ def train(args):
             device,
             amp_enabled,
         )
+        train_seconds = time.perf_counter() - train_start
+        val_start = time.perf_counter()
         val_result = evaluate(
             model,
             loaders.val_loader,
@@ -550,6 +587,8 @@ def train(args):
             device,
             amp_enabled,
         )
+        val_seconds = time.perf_counter() - val_start
+        epoch_seconds = time.perf_counter() - epoch_start
         if scheduler is not None:
             scheduler.step()
 
@@ -560,9 +599,15 @@ def train(args):
                 "lr": current_lr,
                 "train_loss": train_loss,
                 "train_acc": train_acc,
+                "train_seconds": train_seconds,
+                "train_samples_per_second": len(loaders.train_loader.dataset)
+                / train_seconds,
                 "val_loss": val_result["loss"],
                 "val_acc": val_result["accuracy"],
                 "val_macro_f1": val_result["macro_f1"],
+                "val_seconds": val_seconds,
+                "val_samples_per_second": len(loaders.val_loader.dataset) / val_seconds,
+                "epoch_seconds": epoch_seconds,
             }
         )
         improved = (
@@ -583,7 +628,8 @@ def train(args):
             f"train_loss={train_loss:.4f}  train_acc={train_acc:.4f}  "
             f"val_loss={val_result['loss']:.4f}  "
             f"val_acc={val_result['accuracy']:.4f}  "
-            f"val_macro_f1={val_result['macro_f1']:.4f}"
+            f"val_macro_f1={val_result['macro_f1']:.4f}  "
+            f"epoch_seconds={epoch_seconds:.1f}"
         )
 
         if (
@@ -597,6 +643,7 @@ def train(args):
             break
 
     model.load_state_dict(best_state)
+    best_eval_start = time.perf_counter()
     best_eval = evaluate(
         model,
         loaders.val_loader,
@@ -605,11 +652,17 @@ def train(args):
         amp_enabled,
         record_logits=True,
     )
+    best_eval_seconds = time.perf_counter() - best_eval_start
     best_summary = summarize_predictions(
         best_eval["y_true"],
         best_eval["y_pred"],
         labels,
     )
+    peak_cuda_memory_allocated = None
+    peak_cuda_memory_reserved = None
+    if device.type == "cuda":
+        peak_cuda_memory_allocated = torch.cuda.max_memory_allocated(device)
+        peak_cuda_memory_reserved = torch.cuda.max_memory_reserved(device)
     run_dir.mkdir(parents=True, exist_ok=True)
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(best_state, artifact_path)
@@ -625,9 +678,11 @@ def train(args):
                 "val_macro_f1": best_eval["macro_f1"],
                 "per_class": best_summary["per_class"],
                 "confusion_matrix": best_summary["confusion_matrix"],
+                "eval_seconds": best_eval_seconds,
             },
         },
     )
+    total_seconds = time.perf_counter() - run_start
     write_json(
         metadata_path,
         {
@@ -639,6 +694,10 @@ def train(args):
             "epochs_requested": args.epochs,
             "epochs_completed": len(epoch_metrics),
             "batch_size": args.batch_size,
+            "num_workers": args.num_workers,
+            "prefetch_factor": args.prefetch_factor if args.num_workers > 0 else None,
+            "pin_memory": device.type == "cuda",
+            "persistent_workers": args.persistent_workers,
             "lr": args.lr,
             "weight_decay": args.weight_decay,
             "optimizer": args.optimizer,
@@ -667,6 +726,9 @@ def train(args):
             "best_val_macro_f1": best_val_macro_f1,
             "best_val_accuracy": best_val_accuracy,
             "final_val_macro_f1": final_val_macro_f1,
+            "total_seconds": total_seconds,
+            "peak_cuda_memory_allocated": peak_cuda_memory_allocated,
+            "peak_cuda_memory_reserved": peak_cuda_memory_reserved,
             "artifact": str(artifact_path),
             "metrics": str(metrics_path),
             "val_predictions": str(val_predictions_path),
@@ -674,6 +736,11 @@ def train(args):
     )
     print("best_epoch:", best_epoch)
     print("best_val_macro_f1:", f"{best_val_macro_f1:.4f}")
+    if peak_cuda_memory_allocated is not None:
+        print(
+            "peak_cuda_memory_allocated_mib:",
+            f"{peak_cuda_memory_allocated / 1024 / 1024:.1f}",
+        )
     print("val_predictions:", relative(val_predictions_path))
 
 

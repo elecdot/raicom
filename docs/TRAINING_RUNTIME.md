@@ -38,6 +38,18 @@ Run the default Model Candidate training driver from the activated training envi
 just train
 ```
 
+The default training command keeps a conservative loader shape: batch size 32
+and no DataLoader workers. On a local GPU machine, pass throughput settings
+explicitly and compare both runtime and Internal Validation Macro F1 before
+adopting them as a repeatable experiment:
+
+```bash
+just train --batch-size 64 --num-workers 4 --persistent-workers
+```
+
+Training metrics record epoch seconds, images per second, and peak CUDA memory
+for later comparison.
+
 Training artifacts that may be submitted or loaded by `main.py` should be written under `results/`.
 
 ## Cloud GPU Notes
