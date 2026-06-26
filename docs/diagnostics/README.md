@@ -18,5 +18,7 @@ Current reports:
   overlap across three training seeds.
 - `efficientnet-b0-val-image-features.*`: image statistics and dHash
   duplicate diagnostics for the fixed-split EfficientNet-B0 validation set.
+- `train-image-features.*`: image statistics and dHash duplicate diagnostics
+  for the full Training Set.
 - `efficientnet-b0-logit-bias.*`: in-split class-wise logit bias diagnostic
   across fixed-split EfficientNet-B0 runs.

@@ -42,6 +42,10 @@ stable-error-pool *args:
 val-image-features *args:
     @python scripts/audit-val-image-features.py {{args}}
 
+# Audit image features for the full Training Set.
+train-image-features *args:
+    @python scripts/audit-train-image-features.py {{args}}
+
 # Diagnose class-wise logit bias on fixed-split EfficientNet-B0 runs.
 logit-bias-diagnostic *args:
     @./scripts/agent-env.sh uv run python scripts/diagnose-logit-bias.py {{args}}
