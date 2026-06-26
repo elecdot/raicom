@@ -32,6 +32,12 @@ Verify CUDA before training:
 python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no cuda')"
 ```
 
+Run the baseline training driver from the activated training environment:
+
+```bash
+just train
+```
+
 Training artifacts that may be submitted or loaded by `main.py` should be written under `results/`.
 
 ## Cloud GPU Notes

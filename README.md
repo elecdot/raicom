@@ -53,6 +53,7 @@ Prefer repository commands over ad hoc long commands:
 ```bash
 just doctor       # show workspace status and recipes
 just check        # run lightweight non-training checks
+just train        # run baseline training in the active GPU runtime
 just agent <cmd>  # run a command with workspace-local caches
 ```
 
@@ -65,6 +66,7 @@ just agent <cmd>  # run a command with workspace-local caches
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, Python syntax, and local training data layout without installing model runtime dependencies or training.
+- `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
 
 ## Open Loops
 

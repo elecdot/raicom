@@ -20,6 +20,10 @@ check:
     @./scripts/agent-env.sh uv run python -m py_compile main.py train.py
     @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
 
+# Run baseline training in the active Python runtime.
+train *args:
+    @python train.py --require-cuda {{args}}
+
 # Run with workspace-local caches.
 agent *args:
     @./scripts/agent-env.sh {{args}}
