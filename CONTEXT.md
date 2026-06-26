@@ -1,41 +1,37 @@
-# Minimal Workspace Template
+# RAICOM Weather Classification
 
-This context names the purpose and boundary of the workspace template so future changes preserve its minimal, agent-safe shape. After copying this template into a real project, rewrite this file around the new project's language and scope.
+This context names the shared language for the RAICOM weather image classification competition workspace. It keeps contest concepts distinct from local implementation choices.
 
 ## Language
 
-**Minimal Workspace Template**:
-A reusable starting point for repositories that need an agent-safe documentation and command workspace. It provides orientation and workflow boundaries without choosing an application stack.
-_Avoid_: General project template, app scaffold, starter kit
+**Weather Image Classification**:
+A four-class image classification task where each input image is assigned one weather category.
+_Avoid_: Generic image classification, weather detection
 
-**Quick Start**:
-A copied workspace reaching useful project work after a small amount of project-specific setup. It means the template supports fast orientation and early workflow formation for small projects and the original foundation of larger projects.
-_Avoid_: Zero-configuration application, production-ready scaffold, language starter
+**Weather Category**:
+One of the official output labels: `sunny`, `cloudy`, `rainy`, or `snowy`.
+_Avoid_: Class name, label string, weather type
 
-**Bootstrap Checklist**:
-The short set of project-specific updates that turns a copied template into a usable workspace for real project work. It clarifies the first customization steps without prescribing a technology stack.
-_Avoid_: Project roadmap, setup script, onboarding guide
+**Training Set**:
+The labeled images provided for model development before submission.
+_Avoid_: Dataset, train data, local images
 
-**Failing Placeholder Recipe**:
-A documented command slot that exits unsuccessfully until a project replaces it with a real workflow command. It preserves an honest distinction between available commands and unconfigured quality gates.
-_Avoid_: No-op command, stub gate, fake check
+**Internal Validation Split**:
+A held-out portion of the Training Set used locally to estimate generalization before submitting.
+_Avoid_: Test set, competition set, public score
 
-**Base Local Gate**:
-The minimal local command that should run successfully in the current workspace state. In this template, it provides a stable fallback gate before a project defines stronger checks.
-_Avoid_: Full quality gate, test suite, release check
+**Competition Set**:
+The hidden image set used by the competition platform for final scoring.
+_Avoid_: Validation set, local test set, train split
 
-**Directory README**:
-A local entry point for an important subtree that needs an index, rules, or conventions to stay readable and maintainable. It is not required for simple directories whose contained files are self-explanatory.
-_Avoid_: Mandatory folder README, blanket directory index
+**Macro F1**:
+The official ranking metric that gives each Weather Category equal weight regardless of class frequency.
+_Avoid_: Accuracy, weighted F1, micro F1
 
-**Agent Environment**:
-A lightweight command wrapper that keeps agent and tool cache writes inside the workspace. It may include narrowly justified tool cache variables, but it is not a general language-tool preset.
-_Avoid_: Full development environment, language toolchain setup, universal cache config
+**Submission Prediction Interface**:
+The platform-facing prediction entry point that receives one image and returns one Weather Category.
+_Avoid_: Training script, notebook cell, evaluation helper
 
-**Architecture Decision Record**:
-A numbered note for decisions that are hard to reverse, surprising without context, and based on a real tradeoff. It records why the decision exists without turning routine implementation choices into process overhead.
-_Avoid_: Routine design note, dated decision log, implementation diary
-
-**Definition Of Done**:
-The agent completion standard for delivering an end-to-end change with proportional validation and explicit remaining risks. It keeps even small projects clear about what was changed, checked, skipped, and left unresolved.
-_Avoid_: Heavyweight process gate, release checklist, task wishlist
+**Platform Run**:
+The execution of the submitted project on the hosted momodel environment for system testing or scoring.
+_Avoid_: Local run, offline experiment, notebook test
