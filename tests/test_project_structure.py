@@ -84,3 +84,15 @@ def test_validation_image_feature_command_is_documented():
     assert "val-image-features" in justfile
     assert "audit-val-image-features.py" in scripts_readme
     assert "efficientnet-b0-val-image-features" in diagnostics_readme
+
+
+def test_logit_bias_diagnostic_command_is_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+    diagnostics_readme = (ROOT / "docs/diagnostics/README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "logit-bias-diagnostic" in justfile
+    assert "diagnose-logit-bias.py" in scripts_readme
+    assert "efficientnet-b0-logit-bias" in diagnostics_readme

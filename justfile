@@ -42,6 +42,10 @@ stable-error-pool *args:
 val-image-features *args:
     @python scripts/audit-val-image-features.py {{args}}
 
+# Diagnose class-wise logit bias on fixed-split EfficientNet-B0 runs.
+logit-bias-diagnostic *args:
+    @./scripts/agent-env.sh uv run python scripts/diagnose-logit-bias.py {{args}}
+
 # Smoke-test the platform predict interface in the active runtime.
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}

@@ -65,6 +65,7 @@ just test         # run lightweight pytest tests
 just train        # run default Model Candidate training in the active GPU runtime
 just stable-error-pool # summarize fixed-split validation error overlap
 just val-image-features # audit fixed-split validation image features
+just logit-bias-diagnostic # diagnose fixed-split class-wise logit bias
 just promote-submission <artifact> # promote a model artifact for platform loading
 just confirm-submission # print the pre-submission checklist
 just smoke-predict # validate predict() after a model artifact exists
