@@ -20,5 +20,9 @@ only when the template or project has a concrete reason to support that tool.
 helper scripts.
 - `check-data-layout.py`: validates that the local Training Image Root directly
 contains the four weather category directories.
+- `promote-submission.py`: copies a selected Model Artifact to the fixed
+Submission Artifact path at `results/model_sample.pth`.
+- `confirm-submission.py`: checks for submission-facing files and prints the
+manual Submission Confirmation checklist.
 - `smoke-predict.py`: validates `main.predict()` with an existing
 `results/model_sample.pth` artifact in the active runtime.

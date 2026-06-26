@@ -63,6 +63,8 @@ just fmt          # format maintained Python sources
 just lint         # lint maintained Python sources
 just test         # run lightweight pytest tests
 just train        # run baseline training in the active GPU runtime
+just promote-submission <artifact> # promote a model artifact for platform loading
+just confirm-submission # print the pre-submission checklist
 just smoke-predict # validate predict() after a model artifact exists
 just agent <cmd>  # run a command with workspace-local caches
 ```
@@ -79,6 +81,8 @@ just agent <cmd>  # run a command with workspace-local caches
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, lint, lightweight tests, Python syntax, and local training data layout without installing model runtime dependencies or training.
 - `train.py` is a CLI training driver with `baseline_cnn` as the default Model Candidate; `just train` requires CUDA and writes an Experiment Run under `results/runs/<run-id>/` by default.
+- `just promote-submission <artifact>` copies a selected Model Artifact to the fixed Submission Artifact path: `results/model_sample.pth`.
+- `just confirm-submission` checks for the Submission Artifact and prints the manual Submission Confirmation checklist.
 - `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
 
 ## Target Workflow
@@ -91,11 +95,10 @@ The initialization work is moving toward a Model Candidate workflow:
 - Each Experiment Run writes `model.pth`, `metadata.json`, and `metrics.json`.
 - `model.pth` contains the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
 - `docs/experiments/README.md` is the manual review log for notable Experiment Runs.
-- `just promote-submission <artifact>` will make a selected Model Artifact the fixed Submission Artifact at `results/model_sample.pth`.
-- `just confirm-submission` will provide a pre-submission checklist separate from `just check`.
+- `just promote-submission <artifact>` makes a selected Model Artifact the fixed Submission Artifact at `results/model_sample.pth`.
+- `just confirm-submission` provides a pre-submission checklist separate from `just check`.
 
 ## Open Loops
 
-- [ ] Implement `promote-submission` and `confirm-submission`.
 - [ ] Run `just smoke-predict` after producing `results/model_sample.pth`.
 - [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.

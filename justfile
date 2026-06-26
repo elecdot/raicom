@@ -34,6 +34,14 @@ train *args:
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}
 
+# Promote a Model Artifact to the fixed Submission Artifact path.
+promote-submission artifact:
+    @python scripts/promote-submission.py {{artifact}}
+
+# Print the pre-submission confirmation checklist.
+confirm-submission:
+    @python scripts/confirm-submission.py
+
 # Run with workspace-local caches.
 agent *args:
     @./scripts/agent-env.sh {{args}}

@@ -29,3 +29,13 @@ def test_training_writes_experiment_run_outputs():
     assert "metadata.json" in train_source
     assert "metrics.json" in train_source
     assert "best_val_macro_f1" in train_source
+
+
+def test_submission_flow_commands_are_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+
+    assert "promote-submission" in justfile
+    assert "confirm-submission" in justfile
+    assert "promote-submission.py" in scripts_readme
+    assert "confirm-submission.py" in scripts_readme
