@@ -62,6 +62,7 @@ just fmt          # format maintained Python sources
 just lint         # lint maintained Python sources
 just test         # run lightweight pytest tests
 just train        # run baseline training in the active GPU runtime
+just smoke-predict # validate predict() after a model artifact exists
 just agent <cmd>  # run a command with workspace-local caches
 ```
 
@@ -77,8 +78,9 @@ just agent <cmd>  # run a command with workspace-local caches
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, lint, lightweight tests, Python syntax, local training data layout, and submission entrypoint drift without installing model runtime dependencies or training.
 - `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
+- `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
 
 ## Open Loops
 
-- [ ] Add a smoke test for the `predict()` interface once a model artifact exists.
+- [ ] Run `just smoke-predict` after producing `results/model_sample.pth`.
 - [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.

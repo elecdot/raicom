@@ -31,6 +31,10 @@ check:
 train *args:
     @python train.py --require-cuda {{args}}
 
+# Smoke-test the platform predict interface in the active runtime.
+smoke-predict *args:
+    @python scripts/smoke-predict.py {{args}}
+
 # Run with workspace-local caches.
 agent *args:
     @./scripts/agent-env.sh {{args}}

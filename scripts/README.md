@@ -23,3 +23,5 @@ contains the four weather category directories.
 - `check-submission-entrypoint.py`: verifies that the self-contained
 `main.py` baseline labels, image size, and model structure match
 `weather_model.py`.
+- `smoke-predict.py`: validates `main.predict()` with an existing
+`results/model_sample.pth` artifact in the active runtime.
