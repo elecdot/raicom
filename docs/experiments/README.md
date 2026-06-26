@@ -40,3 +40,16 @@ Seed 42 only. This group compares local throughput settings, not model design.
 | `efficientnet-b0-seed42-bs32-w4` | 32 | 4 | yes | 0.9392 | 14 | Preferred local throughput setting for B0. |
 | `efficientnet-b0-seed42-bs64-w4` | 64 | 4 | yes | 0.9322 | 13 | Keep as throughput reference; do not promote over bs32/w4. |
 | `efficientnet-b0-seed42-bs96-w4` | 96 | 4 | no | 0.9217 | 6 | Reject as current B0 training setting. |
+
+### Validation Error Review
+
+The `efficientnet-b0-seed42-bs32-w4` high-confidence Validation Error Audit
+was manually reviewed at `--min-confidence 0.8`. A structured snapshot is kept
+at `docs/experiments/reviews/efficientnet-b0-seed42-bs32-w4-high-conf-errors.csv`
+because generated audit files under `results/` are ignored and may be
+regenerated.
+
+Review label counts: `model-error` 10, `hard-example` 5, `source-artifact` 3,
+`ambiguous` 2, `mislabel` 2, `hard-model` 1. Treat this Validation Error
+Review as low-confidence qualitative evidence, not as Training Set relabeling
+or an authoritative correction source.

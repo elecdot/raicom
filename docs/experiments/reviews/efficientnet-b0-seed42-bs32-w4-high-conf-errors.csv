@@ -1,0 +1,24 @@
+path,true_label,pred_label,confidence,review_label,review_notes,logit_cloudy,logit_rainy,logit_snowy,logit_sunny
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00393.jpg,cloudy,sunny,0.980882465839386,model-error,"识别为晴天，实际为大片云，人工主管认为识别为cloudy相对合理但并不确定，可能偏向 ambiguous",-3.3203125,-0.71630859375,-1.1279296875,3.7734375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/snowy/snowy_00184.jpg,snowy,rainy,0.9732125997543335,model-error,"实际为雪景街道，可能并没有真正下雪，确实识别相对较难，但认为该识别错误：更可能为 cloudy",-2.4453125,3.5625,-0.50830078125,-1.265625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00113.jpg,cloudy,sunny,0.9524445533752441,model-error,问题明显较大，明显的对应类别识别错误,-1.986328125,-0.8544921875,-1.0537109375,2.904296875
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00089.jpg,sunny,cloudy,0.9522346258163452,source-artifact,几个 source-artifact 均为同样的水印,3.240234375,-1.69921875,-1.3837890625,-0.165283203125
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01401.jpg,cloudy,sunny,0.9462966918945312,model-error,"可能为场景较亮，但明显是 cloudy 天空略透蓝天",-1.373046875,-0.91064453125,-1.1533203125,2.83984375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00408.jpg,rainy,cloudy,0.9454162120819092,hard-example,睡眠场景，阴天下雨都合理（下雨时的阴天？）,2.955078125,-0.75732421875,-0.76611328125,-1.7431640625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_01467.jpg,sunny,cloudy,0.9315137267112732,model-error,"同第五个样本，场景亮，天空云，但”略略略“透蓝天",2.876953125,-1.6875,-1.2880859375,-0.16845703125
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/snowy/snowy_00354.jpg,snowy,sunny,0.922502338886261,model-error,这个样本特殊，其可能算是 hard-example，因为很难但从雪花判断是 snowy 还是 cloudy 但进一步说至少不应该是 sunny,-3.59765625,-0.322509765625,-0.130859375,2.96484375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00403.jpg,cloudy,sunny,0.9102554321289062,ambiguous,这张图一半云一半晴天，阳光未受影响，判断模糊,-1.6328125,-1.1904296875,-0.56787109375,2.380859375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/snowy/snowy_00310.jpg,snowy,cloudy,0.9086326360702515,model-error,,2.59375,-1.3896484375,0.00537109375,-2.3984375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00626.jpg,cloudy,sunny,0.9086272120475769,hard-model,本图虽然多云但天空能见度较高,-1.455078125,-0.6650390625,-0.75439453125,2.494140625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00099.jpg,cloudy,sunny,0.9073130488395691,mislabel,晚霞，认为错标,-1.12109375,-0.8095703125,-0.68212890625,2.525390625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00764.jpg,cloudy,rainy,0.9063252210617065,model-error,,-3.060546875,3.34765625,-1.275390625,0.96044921875
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00143.jpg,rainy,cloudy,0.8992533087730408,hard-example,较多仅靠路面积水判断的 rainy，很容易被判断为 cloudy,2.6171875,-0.2252197265625,-0.62109375,-1.615234375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00334.jpg,sunny,cloudy,0.8937056660652161,model-error,有水印，但较为确实为晴天，虽然有一定云量但太阳高悬,2.291015625,-0.82470703125,-0.84130859375,-1.18359375
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00220.jpg,rainy,cloudy,0.8919149041175842,hard-example,路面积水都较为不明显，难以分辨,2.5703125,0.010650634765625,-0.9140625,-1.7587890625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01803.jpg,cloudy,rainy,0.8882536292076111,model-error,阴天多云，没有找到路面街景，没有实际证据硬判断为下雨,-0.20703125,2.4140625,-0.84619140625,-1.8056640625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00219.jpg,sunny,cloudy,0.861424446105957,source-artifact,包含水印,2.251953125,-1.068359375,-1.3095703125,-0.0880126953125
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00123.jpg,cloudy,sunny,0.8605772852897644,source-artifact,"包含水印，但与前一个样本相对较为奇怪，二者都应该是 ambiguous，我们人工认为在二者之间，模型对于分类的表达较为合理",0.2578125,-1.7099609375,-1.748046875,2.3203125
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01373.jpg,cloudy,sunny,0.8567553162574768,mislabel,虽然天空有云，但我们认为更倾向透明度、阳光更好 sunny,-0.08868408203125,-1.28515625,-1.4931640625,2.13671875
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00233.jpg,sunny,cloudy,0.838171124458313,hard-example,背景较为难以分辨,2.02734375,-1.2158203125,-1.408203125,-0.07781982421875
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01819.jpg,cloudy,rainy,0.8249300122261047,ambiguous,地面有疑似水印的部分，难以分本,-0.1419677734375,1.9208984375,-0.84033203125,-1.8994140625
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00288.jpg,rainy,cloudy,0.8205117583274841,hard-example,只有打伞和伞上部分反光明显，较难分辨,1.9296875,-0.321533203125,-0.548828125,-1.58984375

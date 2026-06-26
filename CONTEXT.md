@@ -52,6 +52,14 @@ _Avoid_: Model file, checkpoint, script variant, architecture
 A single training attempt for a Model Candidate with a specific configuration, validation result, and resulting Model Artifact.
 _Avoid_: Model Candidate, training script, submission run
 
+**Validation Error Audit**:
+A generated review packet of selected Internal Validation Split prediction errors used to inspect Model Candidate behavior.
+_Avoid_: Test result, corrected labels, final review
+
+**Validation Error Review**:
+Human notes added to a Validation Error Audit as qualitative evidence about likely model mistakes, ambiguous cases, source artifacts, or possible Training Set label issues.
+_Avoid_: Ground truth, relabeled Training Set, authoritative correction
+
 **Promote to Submission**:
 The decision and action of selecting a Model Artifact from an Experiment Run as the Submission Artifact.
 _Avoid_: Copy file, publish model, submit run
