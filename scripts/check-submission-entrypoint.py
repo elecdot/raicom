@@ -36,9 +36,7 @@ def main():
     expected_labels = assignment_value(shared, "LABELS")
     submission_labels = assignment_value(submission, "label")
     if submission_labels != expected_labels:
-        print(
-            f"main.py label drift: {submission_labels} != {expected_labels}"
-        )
+        print(f"main.py label drift: {submission_labels} != {expected_labels}")
         return 1
 
     expected_size = assignment_value(shared, "IMAGE_SIZE")

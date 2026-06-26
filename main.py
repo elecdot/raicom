@@ -3,26 +3,30 @@ import torch.nn as nn
 import numpy as np
 import cv2
 
-label = ['cloudy', 'rainy', 'snowy', 'sunny']
+label = ["cloudy", "rainy", "snowy", "sunny"]
 im_size = 224
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class WeatherCNN(nn.Module):
     def __init__(self, num_classes=4):
         super().__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3), nn.ReLU(inplace=True),
+            nn.Conv2d(3, 32, kernel_size=3),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
-            nn.Conv2d(32, 64, kernel_size=3), nn.ReLU(inplace=True),
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
-            nn.Conv2d(64, 128, kernel_size=3), nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, kernel_size=3),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
         )
         self.classifier = nn.Sequential(
             nn.Flatten(),
             nn.Dropout(0.5),
-            nn.Linear(128 * 26 * 26, 256), nn.ReLU(inplace=True),
+            nn.Linear(128 * 26 * 26, 256),
+            nn.ReLU(inplace=True),
             nn.Linear(256, num_classes),
         )
 

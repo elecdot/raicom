@@ -11,9 +11,7 @@ from torchvision import datasets, transforms
 from weather_model import IMAGE_SIZE, LABELS, WeatherCNN
 
 REPO_ROOT = Path(__file__).resolve().parent
-DEFAULT_TRAIN_DIR = (
-    REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
-)
+DEFAULT_TRAIN_DIR = REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
 DEFAULT_OUTPUT = REPO_ROOT / "results/model_sample.pth"
 
 
@@ -54,16 +52,21 @@ def resolve_device(device_name):
 
 
 def build_loaders(args, device):
-    tf = transforms.Compose([
-        transforms.Resize((args.image_size, args.image_size)),
-        transforms.ToTensor(),
-    ])
+    tf = transforms.Compose(
+        [
+            transforms.Resize((args.image_size, args.image_size)),
+            transforms.ToTensor(),
+        ]
+    )
 
     full_set = datasets.ImageFolder(args.train_dir, transform=tf)
-    actual_labels = [label for label, _ in sorted(
-        full_set.class_to_idx.items(),
-        key=lambda item: item[1],
-    )]
+    actual_labels = [
+        label
+        for label, _ in sorted(
+            full_set.class_to_idx.items(),
+            key=lambda item: item[1],
+        )
+    ]
     if actual_labels != LABELS:
         raise RuntimeError(
             f"unexpected class order: {actual_labels}; expected {LABELS}"
@@ -73,7 +76,8 @@ def build_loaders(args, device):
     n_val = int(len(full_set) * args.val_ratio)
     n_train = len(full_set) - n_val
     train_set, val_set = random_split(
-        full_set, [n_train, n_val],
+        full_set,
+        [n_train, n_val],
         generator=torch.Generator().manual_seed(args.seed),
     )
 
@@ -141,9 +145,7 @@ def train(args):
             total += x.size(0)
         train_loss = running_loss / total
         train_acc = correct / total
-        val_loss, val_acc, val_macro_f1 = evaluate(
-            model, val_loader, criterion, device
-        )
+        val_loss, val_acc, val_macro_f1 = evaluate(model, val_loader, criterion, device)
         print(
             f"Epoch {epoch}/{args.epochs}  "
             f"train_loss={train_loss:.4f}  train_acc={train_acc:.4f}  "
