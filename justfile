@@ -30,6 +30,10 @@ check:
 train *args:
     @python train.py --require-cuda {{args}}
 
+# Create an audit pack from validation prediction errors.
+audit-errors run *args:
+    @python scripts/audit-val-predictions.py {{run}} {{args}}
+
 # Smoke-test the platform predict interface in the active runtime.
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}

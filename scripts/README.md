@@ -26,3 +26,5 @@ Submission Artifact path at `results/model_sample.pth`.
 manual Submission Confirmation checklist.
 - `smoke-predict.py`: validates `main.predict()` with an existing
 `results/model_sample.pth` artifact in the active runtime.
+- `audit-val-predictions.py`: creates a compact high-confidence validation error
+audit pack from an Experiment Run's `val_predictions.csv`.

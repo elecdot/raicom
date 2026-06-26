@@ -52,3 +52,11 @@ def test_submission_flow_commands_are_documented():
     assert "confirm-submission" in justfile
     assert "promote-submission.py" in scripts_readme
     assert "confirm-submission.py" in scripts_readme
+
+
+def test_validation_error_audit_command_is_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+
+    assert "audit-errors" in justfile
+    assert "audit-val-predictions.py" in scripts_readme

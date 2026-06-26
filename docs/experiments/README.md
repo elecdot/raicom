@@ -2,6 +2,16 @@
 
 Manual review log for notable Experiment Runs. Keep this file as a decision index; use each run's `metadata.json` and `metrics.json` for full machine-readable details.
 
+## Review Workflow
+
+Use `just audit-errors <run-id>` to create a compact high-confidence validation
+error audit pack under `results/runs/<run-id>/audit/`. Add `--contact-sheet`
+when visual review is useful in a runtime with OpenCV installed.
+
+Keep this README as the durable decision index. Use notebooks only for ad hoc
+visual exploration or plots that are hard to review in plain text, and pair any
+durable notebook with Jupytext.
+
 ## EfficientNet-B0
 
 Shared recipe unless noted: pretrained TorchVision `efficientnet_b0`, mild augmentation, stratified split, inverse-sqrt class weights, label smoothing 0.05, AdamW, cosine scheduler, CUDA AMP.
