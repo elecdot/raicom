@@ -35,6 +35,16 @@ MODEL_CANDIDATES = {
         std=torchvision_candidates.IMAGENET_STD,
         interpolation="bicubic",
     ),
+    torchvision_candidates.EFFICIENTNET_B3_NAME: ModelCandidate(
+        name=torchvision_candidates.EFFICIENTNET_B3_NAME,
+        labels=torchvision_candidates.LABELS,
+        image_size=torchvision_candidates.EFFICIENTNET_B3_IMAGE_SIZE,
+        build_model=torchvision_candidates.build_efficientnet_b3,
+        pretrained_weights_name=torchvision_candidates.EFFICIENTNET_B3_WEIGHTS_NAME,
+        mean=torchvision_candidates.IMAGENET_MEAN,
+        std=torchvision_candidates.IMAGENET_STD,
+        interpolation="bicubic",
+    ),
 }
 
 

@@ -30,6 +30,17 @@ def test_efficientnet_b0_candidate_is_registered_as_default():
     assert 'DEFAULT_MODEL = "efficientnet_b0"' in train_source
 
 
+def test_efficientnet_b3_candidate_is_registered():
+    registry_source = (ROOT / "models/registry.py").read_text(encoding="utf-8")
+    model_source = (ROOT / "models/torchvision_candidates.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "efficientnet_b3" in registry_source
+    assert "EfficientNet_B3_Weights.DEFAULT" in model_source
+    assert "EFFICIENTNET_B3_IMAGE_SIZE = 300" in model_source
+
+
 def test_training_writes_experiment_run_outputs():
     train_source = (ROOT / "train.py").read_text(encoding="utf-8")
 

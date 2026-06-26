@@ -1,5 +1,10 @@
 import torch.nn as nn
-from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
+from torchvision.models import (
+    EfficientNet_B0_Weights,
+    EfficientNet_B3_Weights,
+    efficientnet_b0,
+    efficientnet_b3,
+)
 
 
 LABELS = ("cloudy", "rainy", "snowy", "sunny")
@@ -10,10 +15,22 @@ EFFICIENTNET_B0_NAME = "efficientnet_b0"
 EFFICIENTNET_B0_IMAGE_SIZE = 224
 EFFICIENTNET_B0_WEIGHTS_NAME = "EfficientNet_B0_Weights.DEFAULT"
 
+EFFICIENTNET_B3_NAME = "efficientnet_b3"
+EFFICIENTNET_B3_IMAGE_SIZE = 300
+EFFICIENTNET_B3_WEIGHTS_NAME = "EfficientNet_B3_Weights.DEFAULT"
+
 
 def build_efficientnet_b0(pretrained=True):
     weights = EfficientNet_B0_Weights.DEFAULT if pretrained else None
     model = efficientnet_b0(weights=weights)
+    in_features = model.classifier[-1].in_features
+    model.classifier[-1] = nn.Linear(in_features, len(LABELS))
+    return model
+
+
+def build_efficientnet_b3(pretrained=True):
+    weights = EfficientNet_B3_Weights.DEFAULT if pretrained else None
+    model = efficientnet_b3(weights=weights)
     in_features = model.classifier[-1].in_features
     model.classifier[-1] = nn.Linear(in_features, len(LABELS))
     return model
