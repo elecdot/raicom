@@ -8,6 +8,11 @@ Use `just audit-errors <run-id>` to create a compact high-confidence validation
 error audit pack under `results/runs/<run-id>/audit/`. Add `--contact-sheet`
 when visual review is useful in a runtime with OpenCV installed.
 
+When comparing error overlap across runs, keep `--split-seed` fixed and vary
+`--train-seed`. Runs that vary `--seed` alone usually change both the training
+randomness and the Internal Validation Split, so low path overlap between their
+audit packs is expected.
+
 Keep this README as the durable decision index. Use notebooks only for ad hoc
 visual exploration or plots that are hard to review in plain text, and pair any
 durable notebook with Jupytext.

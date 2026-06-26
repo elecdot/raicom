@@ -50,6 +50,9 @@ just train --batch-size 32 --num-workers 4 --persistent-workers
 Training metrics record epoch seconds, images per second, and peak CUDA memory
 for later comparison.
 
+Use `--seed` for ordinary runs. When separating split variance from training
+variance, set `--split-seed` and `--train-seed` explicitly.
+
 Training artifacts that may be submitted or loaded by `main.py` should be written under `results/`.
 
 ## Cloud GPU Notes

@@ -74,6 +74,18 @@ def parse_args():
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--val-ratio", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--split-seed",
+        type=int,
+        default=None,
+        help="Override the seed used for the stratified split. Defaults to --seed.",
+    )
+    parser.add_argument(
+        "--train-seed",
+        type=int,
+        default=None,
+        help="Override the seed used for training randomness. Defaults to --seed.",
+    )
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument(
         "--prefetch-factor",
@@ -161,13 +173,21 @@ def validate_args(args):
         raise ValueError("--label-smoothing must be non-negative")
 
 
-def default_run_id(model_candidate, seed):
+def resolve_seeds(args):
+    train_seed = args.train_seed if args.train_seed is not None else args.seed
+    split_seed = args.split_seed if args.split_seed is not None else args.seed
+    return train_seed, split_seed
+
+
+def default_run_id(model_candidate, train_seed, split_seed):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return f"{timestamp}-{model_candidate}-seed{seed}"
+    if train_seed == split_seed:
+        return f"{timestamp}-{model_candidate}-seed{train_seed}"
+    return f"{timestamp}-{model_candidate}-trainseed{train_seed}-splitseed{split_seed}"
 
 
-def resolve_run_paths(args, candidate):
-    run_id = args.run_id or default_run_id(candidate.name, args.seed)
+def resolve_run_paths(args, candidate, train_seed, split_seed):
+    run_id = args.run_id or default_run_id(candidate.name, train_seed, split_seed)
     run_dir = DEFAULT_RUNS_DIR / run_id
     artifact_path = args.output or run_dir / "model.pth"
     return run_id, run_dir, artifact_path
@@ -269,7 +289,7 @@ def count_by_class(targets, indices, labels):
     return counts
 
 
-def build_loaders(args, candidate, device):
+def build_loaders(args, candidate, device, train_seed, split_seed):
     train_transform, eval_transform = build_transforms(args, candidate)
     train_full_set = datasets.ImageFolder(args.train_dir, transform=train_transform)
     eval_full_set = datasets.ImageFolder(args.train_dir, transform=eval_transform)
@@ -284,7 +304,7 @@ def build_loaders(args, candidate, device):
     splitter = StratifiedShuffleSplit(
         n_splits=1,
         test_size=args.val_ratio,
-        random_state=args.seed,
+        random_state=split_seed,
     )
     indices = list(range(len(eval_full_set.targets)))
     train_indices, val_indices = next(splitter.split(indices, eval_full_set.targets))
@@ -294,7 +314,7 @@ def build_loaders(args, candidate, device):
     train_set = Subset(train_full_set, train_indices)
     val_set = Subset(eval_full_set, val_indices)
     pin_memory = device.type == "cuda"
-    train_generator = torch.Generator().manual_seed(args.seed)
+    train_generator = torch.Generator().manual_seed(train_seed)
     worker_kwargs = {}
     if args.num_workers > 0:
         worker_kwargs["prefetch_factor"] = args.prefetch_factor
@@ -512,10 +532,16 @@ def train_one_epoch(model, loader, criterion, optimizer, scaler, device, amp_ena
 def train(args):
     run_start = time.perf_counter()
     validate_args(args)
-    set_seed(args.seed)
+    train_seed, split_seed = resolve_seeds(args)
+    set_seed(train_seed)
     candidate = get_model_candidate(args.model)
     image_size = args.image_size or candidate.image_size
-    run_id, run_dir, artifact_path = resolve_run_paths(args, candidate)
+    run_id, run_dir, artifact_path = resolve_run_paths(
+        args,
+        candidate,
+        train_seed,
+        split_seed,
+    )
     metrics_path = run_dir / "metrics.json"
     metadata_path = run_dir / "metadata.json"
     val_predictions_path = run_dir / "val_predictions.csv"
@@ -530,12 +556,14 @@ def train(args):
     print("pretrained:", pretrained)
     print("device:", device)
     print("amp_enabled:", amp_enabled)
+    print("train_seed:", train_seed)
+    print("split_seed:", split_seed)
     print("image_size:", image_size)
     print("train_dir:", args.train_dir)
     print("run_dir:", run_dir)
     print("output:", artifact_path)
 
-    loaders = build_loaders(args, candidate, device)
+    loaders = build_loaders(args, candidate, device, train_seed, split_seed)
     labels = list(candidate.labels)
     class_weight_tensor, class_weights = build_class_weights(
         args.class_weights,
@@ -690,6 +718,8 @@ def train(args):
             "model_candidate": candidate.name,
             "labels": labels,
             "seed": args.seed,
+            "train_seed": train_seed,
+            "split_seed": split_seed,
             "image_size": image_size,
             "epochs_requested": args.epochs,
             "epochs_completed": len(epoch_metrics),
