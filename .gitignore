@@ -38,6 +38,12 @@ dist/
 *.out
 *.err
 
+# Model/training artifacts
+results/*
+!results/_README.md
+!results/tb_results/
+!results/tb_results/README.md
+
 # Data
 datasets/
 

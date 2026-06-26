@@ -38,6 +38,7 @@ The repository uses `uv` for local development tooling such as Jupytext. Runtime
 | `justfile` | Main command entry point. |
 | `main.py` | Platform-facing prediction entry point. |
 | `train.py` | Baseline training script. |
+| `results/` | Canonical model artifact directory used by training and submission code. |
 | `requirements.txt` | pip runtime dependency set for platform runs. |
 | `requirements-train-cu124.txt` | pip dependency set for CUDA 12.4 training runs. |
 | `scripts/` | Small helper scripts used by documented commands. |
@@ -60,6 +61,7 @@ just agent <cmd>  # run a command with workspace-local caches
 - The official tutorial is available as `tutorial.ipynb` and paired `tutorial.py`.
 - `main.py` and `train.py` contain the official-style CNN baseline.
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
+- Model artifacts are saved under `results/`; the submitted prediction code loads from this directory.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, Python syntax, and local training data layout without installing model runtime dependencies or training.

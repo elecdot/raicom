@@ -36,6 +36,10 @@ _Avoid_: Accuracy, weighted F1, micro F1
 The platform-facing prediction entry point that receives one image and returns one Weather Category.
 _Avoid_: Training script, notebook cell, evaluation helper
 
+**Model Artifact**:
+A trained model file produced from the Training Set and later loaded by the Submission Prediction Interface.
+_Avoid_: Result file, checkpoint, output blob
+
 **Platform Run**:
 The execution of the submitted project on the hosted momodel environment for system testing or scoring.
 _Avoid_: Local run, offline experiment, notebook test
