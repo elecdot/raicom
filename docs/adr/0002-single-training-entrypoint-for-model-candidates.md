@@ -1,0 +1,3 @@
+# Use One Training Entrypoint for Model Candidates
+
+The project needs to compare multiple Model Candidates without fragmenting training workflows into many ad hoc scripts. We keep `train.py` as the single training entrypoint, place Model Candidate definitions under `models/`, and keep `scripts/` limited to workflow helpers. This adds a small registry/boundary cost, but makes local and cloud experiments easier to compare and keeps submission preparation from depending on whichever training script happened to be used. Because `weather_model.py` was only a bootstrap-era shared baseline module, it will be removed rather than preserved as a compatibility layer.

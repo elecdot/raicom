@@ -7,6 +7,7 @@ Durable project documentation lives here. Keep this directory small at first, th
 - `CONVENTIONS.md`: repository-wide path, naming, generated-file, and documentation rules.
 - `TRAINING_RUNTIME.md`: runtime boundary for GPU training versus platform inference.
 - `adr/`: optional architecture decision records for decisions that are hard to reverse or easy to forget.
+- `experiments/`: manual review log for notable Experiment Runs.
 
 ## Guidelines
 

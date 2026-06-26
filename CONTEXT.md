@@ -40,6 +40,26 @@ _Avoid_: Training script, notebook cell, evaluation helper
 A trained model file produced from the Training Set and later loaded by the Submission Prediction Interface.
 _Avoid_: Result file, checkpoint, output blob
 
+**Submission Artifact**:
+The selected Model Artifact used by the Submission Prediction Interface for a Platform Run.
+_Avoid_: Best checkpoint, latest model, experiment artifact
+
+**Model Candidate**:
+A model design or training strategy compared during local experimentation before choosing a Model Artifact for submission.
+_Avoid_: Model file, checkpoint, script variant, architecture
+
+**Experiment Run**:
+A single training attempt for a Model Candidate with a specific configuration, validation result, and resulting Model Artifact.
+_Avoid_: Model Candidate, training script, submission run
+
+**Promote to Submission**:
+The decision and action of selecting a Model Artifact from an Experiment Run as the Submission Artifact.
+_Avoid_: Copy file, publish model, submit run
+
+**Submission Confirmation**:
+The pre-submission check that the Submission Prediction Interface, Submission Artifact, and experiment record describe the same selected Experiment Run and can run locally.
+_Avoid_: Drift check, smoke test, platform run
+
 **Platform Run**:
 The execution of the submitted project on the hosted momodel environment for system testing or scoring.
 _Avoid_: Local run, offline experiment, notebook test

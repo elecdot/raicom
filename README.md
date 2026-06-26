@@ -48,6 +48,7 @@ explicit pip-managed dependency sets:
 | `scripts/` | Small helper scripts used by documented commands. |
 | `docs/` | Durable project documentation and conventions. |
 | `docs/adr/` | Optional architecture decision records. |
+| `docs/experiments/` | Manual Experiment Run review log. |
 | `tmp/` | Local scratch space; only its README and ignore rules are tracked. |
 
 ## Commands
@@ -80,7 +81,23 @@ just agent <cmd>  # run a command with workspace-local caches
 - `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
 - `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
 
+## Target Workflow
+
+The initialization work is moving toward a Model Candidate workflow:
+
+- `train.py` remains the single training entry point.
+- `models/` will hold Model Candidate definitions, starting with `baseline_cnn`.
+- Each `just train` run will create an Experiment Run under `results/runs/<run-id>/`.
+- Each Experiment Run will write `model.pth`, `metadata.json`, and `metrics.json`.
+- `model.pth` will contain the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
+- `docs/experiments/README.md` is the manual review log for notable Experiment Runs.
+- `just promote-submission <artifact>` will make a selected Model Artifact the fixed Submission Artifact at `results/model_sample.pth`.
+- `just confirm-submission` will provide a pre-submission checklist separate from `just check`.
+
 ## Open Loops
 
+- [ ] Implement the Model Candidate registry and move the baseline model under `models/`.
+- [ ] Change training output to `results/runs/<run-id>/`.
+- [ ] Implement `promote-submission` and `confirm-submission`.
 - [ ] Run `just smoke-predict` after producing `results/model_sample.pth`.
 - [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.
