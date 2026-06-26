@@ -8,34 +8,13 @@ from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
-LABELS = ["cloudy", "rainy", "snowy", "sunny"]
+from weather_model import IMAGE_SIZE, LABELS, WeatherCNN
+
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_TRAIN_DIR = (
     REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
 )
 DEFAULT_OUTPUT = REPO_ROOT / "results/model_sample.pth"
-
-
-class WeatherCNN(nn.Module):
-    def __init__(self, num_classes=4):
-        super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3), nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            nn.Conv2d(32, 64, kernel_size=3), nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            nn.Conv2d(64, 128, kernel_size=3), nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-        )
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Dropout(0.5),
-            nn.Linear(128 * 26 * 26, 256), nn.ReLU(inplace=True),
-            nn.Linear(256, num_classes),
-        )
-
-    def forward(self, x):
-        return self.classifier(self.features(x))
 
 
 def parse_args():
@@ -44,7 +23,7 @@ def parse_args():
     )
     parser.add_argument("--train-dir", type=Path, default=DEFAULT_TRAIN_DIR)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--image-size", type=int, default=224)
+    parser.add_argument("--image-size", type=int, default=IMAGE_SIZE)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--lr", type=float, default=1e-3)

@@ -17,8 +17,9 @@ doctor:
 # Run lightweight checks that do not install runtime dependencies or train models.
 check:
     @./scripts/agent-env.sh uv lock --check
-    @./scripts/agent-env.sh uv run python -m py_compile main.py train.py
+    @./scripts/agent-env.sh uv run python -m py_compile main.py train.py weather_model.py
     @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
+    @./scripts/agent-env.sh uv run python scripts/check-submission-entrypoint.py
 
 # Run baseline training in the active Python runtime.
 train *args:

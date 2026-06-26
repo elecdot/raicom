@@ -43,6 +43,7 @@ def predict(X):
     return：
         y_predict : str, 天气类别标签，取值为 'sunny', 'cloudy', 'rainy', 'snowy' 之一。
     """
+    X = cv2.cvtColor(X, cv2.COLOR_BGR2RGB)
     X = cv2.resize(X, (im_size, im_size))
     X = X.astype(np.float32) / 255.0
     # HWC -> CHW，加 batch 维

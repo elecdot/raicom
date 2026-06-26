@@ -37,6 +37,7 @@ The repository uses `uv` for local development tooling such as Jupytext. Runtime
 | `AGENTS.md` | Working contract for coding agents and human-assisted automation. |
 | `justfile` | Main command entry point. |
 | `main.py` | Platform-facing prediction entry point. |
+| `weather_model.py` | Shared baseline labels, image size, and model used by training. |
 | `train.py` | Baseline training script. |
 | `results/` | Canonical model artifact directory used by training and submission code. |
 | `requirements.txt` | pip runtime dependency set for platform runs. |
@@ -60,12 +61,14 @@ just agent <cmd>  # run a command with workspace-local caches
 ## Current State
 
 - The official tutorial is available as `tutorial.ipynb` and paired `tutorial.py`.
-- `main.py` and `train.py` contain the official-style CNN baseline.
+- `weather_model.py` is the training-side source of truth for baseline labels, image size, and model structure.
+- `main.py` remains self-contained for platform submission and is checked against `weather_model.py`.
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
 - Model artifacts are saved under `results/`; the submitted prediction code loads from this directory.
+- `predict()` receives `cv2.imread` BGR input and converts it to RGB before model inference.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
-- `just check` verifies the uv lock, Python syntax, and local training data layout without installing model runtime dependencies or training.
+- `just check` verifies the uv lock, Python syntax, local training data layout, and submission entrypoint drift without installing model runtime dependencies or training.
 - `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
 
 ## Open Loops
