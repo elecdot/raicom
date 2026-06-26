@@ -8,20 +8,30 @@ from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
-from weather_model import IMAGE_SIZE, LABELS, WeatherCNN
+from models.registry import available_model_candidates, get_model_candidate
 
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_TRAIN_DIR = REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
 DEFAULT_OUTPUT = REPO_ROOT / "results/model_sample.pth"
+DEFAULT_MODEL = "baseline_cnn"
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Train the baseline weather classifier."
+    parser = argparse.ArgumentParser(description="Train a weather classifier.")
+    parser.add_argument(
+        "--model",
+        choices=available_model_candidates(),
+        default=DEFAULT_MODEL,
+        help="Model Candidate to train.",
     )
     parser.add_argument("--train-dir", type=Path, default=DEFAULT_TRAIN_DIR)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--image-size", type=int, default=IMAGE_SIZE)
+    parser.add_argument(
+        "--image-size",
+        type=int,
+        default=None,
+        help="Override the selected Model Candidate image size.",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -51,10 +61,11 @@ def resolve_device(device_name):
     return device
 
 
-def build_loaders(args, device):
+def build_loaders(args, candidate, device):
+    image_size = args.image_size or candidate.image_size
     tf = transforms.Compose(
         [
-            transforms.Resize((args.image_size, args.image_size)),
+            transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
         ]
     )
@@ -67,9 +78,10 @@ def build_loaders(args, device):
             key=lambda item: item[1],
         )
     ]
-    if actual_labels != LABELS:
+    expected_labels = list(candidate.labels)
+    if actual_labels != expected_labels:
         raise RuntimeError(
-            f"unexpected class order: {actual_labels}; expected {LABELS}"
+            f"unexpected class order: {actual_labels}; expected {expected_labels}"
         )
     print("class_to_idx:", full_set.class_to_idx)
 
@@ -118,15 +130,19 @@ def evaluate(model, loader, criterion, device):
 
 
 def train(args):
+    candidate = get_model_candidate(args.model)
+    image_size = args.image_size or candidate.image_size
     device = resolve_device(args.device)
     if args.require_cuda and device.type != "cuda":
         raise RuntimeError("CUDA is required for this training run.")
+    print("model:", candidate.name)
     print("device:", device)
+    print("image_size:", image_size)
     print("train_dir:", args.train_dir)
     print("output:", args.output)
 
-    train_loader, val_loader = build_loaders(args, device)
-    model = WeatherCNN(num_classes=len(LABELS)).to(device)
+    train_loader, val_loader = build_loaders(args, candidate, device)
+    model = candidate.build_model().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 

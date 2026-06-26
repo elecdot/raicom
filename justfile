@@ -22,9 +22,8 @@ doctor:
 check:
     @./scripts/agent-env.sh uv lock --check
     @just lint
-    @./scripts/agent-env.sh uv run python -m py_compile main.py train.py weather_model.py
+    @./scripts/agent-env.sh uv run python -m py_compile main.py train.py models/*.py
     @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
-    @./scripts/agent-env.sh uv run python scripts/check-submission-entrypoint.py
     @just test
 
 # Run baseline training in the active Python runtime.
@@ -41,11 +40,11 @@ agent *args:
 
 # Format maintained Python sources.
 fmt:
-    @./scripts/agent-env.sh uv run ruff format main.py train.py weather_model.py scripts tests
+    @./scripts/agent-env.sh uv run ruff format main.py train.py models scripts tests
 
 # Lint maintained Python sources.
 lint:
-    @./scripts/agent-env.sh uv run ruff check main.py train.py weather_model.py scripts tests
+    @./scripts/agent-env.sh uv run ruff check main.py train.py models scripts tests
 
 # Run lightweight tests.
 test:

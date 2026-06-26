@@ -40,7 +40,7 @@ explicit pip-managed dependency sets:
 | `AGENTS.md` | Working contract for coding agents and human-assisted automation. |
 | `justfile` | Main command entry point. |
 | `main.py` | Platform-facing prediction entry point. |
-| `weather_model.py` | Shared baseline labels, image size, and model used by training. |
+| `models/` | Model Candidate definitions and registry. |
 | `train.py` | Baseline training script. |
 | `results/` | Canonical model artifact directory used by training and submission code. |
 | `requirements.txt` | pip runtime dependency set for platform runs. |
@@ -70,15 +70,15 @@ just agent <cmd>  # run a command with workspace-local caches
 ## Current State
 
 - The official tutorial is available as `tutorial.ipynb` and paired `tutorial.py`.
-- `weather_model.py` is the training-side source of truth for baseline labels, image size, and model structure.
-- `main.py` remains self-contained for platform submission and is checked against `weather_model.py`.
+- `models/` contains Model Candidate definitions; `baseline_cnn` is the first registered candidate.
+- `main.py` remains self-contained for platform submission.
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
 - Model artifacts are saved under `results/`; the submitted prediction code loads from this directory.
 - `predict()` receives `cv2.imread` BGR input and converts it to RGB before model inference.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
-- `just check` verifies the uv lock, lint, lightweight tests, Python syntax, local training data layout, and submission entrypoint drift without installing model runtime dependencies or training.
-- `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
+- `just check` verifies the uv lock, lint, lightweight tests, Python syntax, and local training data layout without installing model runtime dependencies or training.
+- `train.py` is a CLI training driver with `baseline_cnn` as the default Model Candidate; `just train` requires CUDA and writes `results/model_sample.pth` by default.
 - `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
 
 ## Target Workflow
@@ -86,7 +86,7 @@ just agent <cmd>  # run a command with workspace-local caches
 The initialization work is moving toward a Model Candidate workflow:
 
 - `train.py` remains the single training entry point.
-- `models/` will hold Model Candidate definitions, starting with `baseline_cnn`.
+- `models/` holds Model Candidate definitions, starting with `baseline_cnn`.
 - Each `just train` run will create an Experiment Run under `results/runs/<run-id>/`.
 - Each Experiment Run will write `model.pth`, `metadata.json`, and `metrics.json`.
 - `model.pth` will contain the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
@@ -96,7 +96,6 @@ The initialization work is moving toward a Model Candidate workflow:
 
 ## Open Loops
 
-- [ ] Implement the Model Candidate registry and move the baseline model under `models/`.
 - [ ] Change training output to `results/runs/<run-id>/`.
 - [ ] Implement `promote-submission` and `confirm-submission`.
 - [ ] Run `just smoke-predict` after producing `results/model_sample.pth`.

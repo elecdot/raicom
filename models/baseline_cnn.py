@@ -1,6 +1,7 @@
 import torch.nn as nn
 
-LABELS = ["cloudy", "rainy", "snowy", "sunny"]
+NAME = "baseline_cnn"
+LABELS = ("cloudy", "rainy", "snowy", "sunny")
 IMAGE_SIZE = 224
 
 
@@ -28,3 +29,7 @@ class WeatherCNN(nn.Module):
 
     def forward(self, x):
         return self.classifier(self.features(x))
+
+
+def build_model():
+    return WeatherCNN(num_classes=len(LABELS))
