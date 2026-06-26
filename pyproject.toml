@@ -1,9 +1,9 @@
 [project]
 name = "raicom"
 version = "0.1.0"
-description = "Add your description here"
+description = "RAICOM weather image classification competition workspace"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.10"
 dependencies = []
 
 [dependency-groups]

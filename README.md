@@ -1,6 +1,6 @@
-# Minimal Workspace Template
+# RAICOM Weather Classification
 
-A lightweight starting point for repositories that need clear commands, durable documentation, and agent-safe defaults.
+Workspace for a RAICOM weather image classification competition. The project targets macro F1 on the hosted momodel scoring environment while keeping local experiments reproducible and reviewable.
 
 Update the following files when bootstrapping a new project:
 ```
@@ -10,28 +10,24 @@ AGENTS.md       # validation guidance / project-specific warnings
 justfile        # actual commands
 ```
 
-## Quick Start
+## Environment
 
 Prerequisites:
 
 - Git
 - Bash
 - `just`
+- `uv` for local development helpers
+- Python 3.9.5 for platform-compatibility checks
 
 ```bash
+uv sync --dev
+python -m pip install -r requirements.txt
 just setup
 just check
 ```
 
-After copying this template, update this README with the new repository purpose and replace placeholder recipes in `justfile` as real tooling appears.
-
-## Bootstrap Checklist
-
-- Replace this README's template purpose, current state, and open loops with the new project's concrete purpose and next task.
-- Rewrite `CONTEXT.md` for the new project's language and scope once the project enters real development.
-- Update `AGENTS.md` with project-specific validation commands, warnings, and working constraints.
-- Replace failing placeholder `justfile` recipes with real commands as tooling appears, or leave them clearly marked as not configured.
-- Run `just setup` and `just check` before starting regular work.
+The repository uses `uv` for local development tooling such as Jupytext. Runtime dependencies for momodel submission are listed separately in `requirements.txt` so they can be installed with `pip` on the platform.
 
 ## Repo Map
 
@@ -40,6 +36,9 @@ After copying this template, update this README with the new repository purpose 
 | `CONTEXT.md` | Canonical language for this template's purpose and scope. |
 | `AGENTS.md` | Working contract for coding agents and human-assisted automation. |
 | `justfile` | Main command entry point. |
+| `main.py` | Platform-facing prediction entry point. |
+| `train.py` | Baseline training script. |
+| `requirements.txt` | pip runtime dependency set for platform runs. |
 | `scripts/` | Small helper scripts used by documented commands. |
 | `docs/` | Durable project documentation and conventions. |
 | `docs/adr/` | Optional architecture decision records. |
@@ -55,15 +54,14 @@ just check        # run the base local gate
 just agent <cmd>  # run a command with workspace-local caches
 ```
 
-The base template intentionally does not configure formatters, linters, tests, CI, docs sites, or language-specific dependencies. Add those only when the repository needs them, then promote the recurring command into `justfile`.
-
-Placeholder recipes such as `fmt`, `lint`, `test`, and `build` intentionally fail until configured so they cannot be mistaken for working quality gates.
-
 ## Current State
 
-- Base workspace commands are available through `just`.
-- No language stack, formatter, linter, tests, build, CI, or docs site is configured.
+- The official tutorial is available as `tutorial.ipynb` and paired `tutorial.py`.
+- `main.py` and `train.py` contain the official-style CNN baseline.
+- Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
+- The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 
 ## Open Loops
 
-- [ ] After copying this template, replace template language with the new project's purpose, commands, and first real task.
+- [ ] Replace placeholder `justfile` recipes with real validation commands.
+- [ ] Add a smoke test for the `predict()` interface once a model artifact exists.

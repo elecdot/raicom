@@ -1,0 +1,10 @@
+# Platform/runtime dependencies for momodel pip installation.
+# PyTorch CPU wheels are used because the final platform may run on CPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+scikit-learn==1.5.2
+matplotlib==3.9.4
