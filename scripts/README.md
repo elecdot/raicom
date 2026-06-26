@@ -18,3 +18,5 @@ only when the template or project has a concrete reason to support that tool.
 - `agent-env.sh`: runs a command with workspace-local cache defaults such as
 `.cache/` and `.cache/uv/`; `UV_CACHE_DIR` is included for possible Python
 helper scripts.
+- `check-data-layout.py`: validates that the local Training Image Root directly
+contains the four weather category directories.

@@ -4,9 +4,9 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
-# Prepare the base workspace.
+# Prepare the workspace.
 setup:
-    @printf 'No setup required for the base template.\n'
+    @printf 'Run `uv sync --dev` for local development tools.\n'
 
 # Show workspace status.
 doctor:
@@ -14,8 +14,11 @@ doctor:
     @printf '\n'
     @just --list
 
-# Run the base local gate.
-check: doctor
+# Run lightweight checks that do not install runtime dependencies or train models.
+check:
+    @./scripts/agent-env.sh uv lock --check
+    @./scripts/agent-env.sh uv run python -m py_compile main.py train.py
+    @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
 
 # Run with workspace-local caches.
 agent *args:
@@ -31,7 +34,7 @@ lint:
     @printf 'No linter configured yet.\n' >&2
     @exit 1
 
-# Configure tests.
+# No test suite is configured yet.
 test:
     @printf 'No tests configured yet.\n' >&2
     @exit 1

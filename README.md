@@ -51,7 +51,7 @@ Prefer repository commands over ad hoc long commands:
 
 ```bash
 just doctor       # show workspace status and recipes
-just check        # run the base local gate
+just check        # run lightweight non-training checks
 just agent <cmd>  # run a command with workspace-local caches
 ```
 
@@ -62,9 +62,9 @@ just agent <cmd>  # run a command with workspace-local caches
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
+- `just check` verifies the uv lock, Python syntax, and local training data layout without installing model runtime dependencies or training.
 
 ## Open Loops
 
-- [ ] Replace placeholder `justfile` recipes with real validation commands.
 - [ ] Add a smoke test for the `predict()` interface once a model artifact exists.
 - [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.
