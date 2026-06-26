@@ -72,3 +72,15 @@ def test_stable_error_pool_command_is_documented():
     assert "stable-error-pool" in justfile
     assert "summarize-val-error-overlap.py" in scripts_readme
     assert "diagnostics/" in docs_readme
+
+
+def test_validation_image_feature_command_is_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+    diagnostics_readme = (ROOT / "docs/diagnostics/README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "val-image-features" in justfile
+    assert "audit-val-image-features.py" in scripts_readme
+    assert "efficientnet-b0-val-image-features" in diagnostics_readme

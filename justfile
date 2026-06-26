@@ -38,6 +38,10 @@ audit-errors run *args:
 stable-error-pool *args:
     @./scripts/agent-env.sh uv run python scripts/summarize-val-error-overlap.py {{args}}
 
+# Audit image features for the fixed-split EfficientNet-B0 validation set.
+val-image-features *args:
+    @python scripts/audit-val-image-features.py {{args}}
+
 # Smoke-test the platform predict interface in the active runtime.
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}

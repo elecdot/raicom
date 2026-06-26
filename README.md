@@ -64,6 +64,7 @@ just lint         # lint maintained Python sources
 just test         # run lightweight pytest tests
 just train        # run default Model Candidate training in the active GPU runtime
 just stable-error-pool # summarize fixed-split validation error overlap
+just val-image-features # audit fixed-split validation image features
 just promote-submission <artifact> # promote a model artifact for platform loading
 just confirm-submission # print the pre-submission checklist
 just smoke-predict # validate predict() after a model artifact exists

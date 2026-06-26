@@ -30,3 +30,5 @@ manual Submission Confirmation checklist.
 audit pack from an Experiment Run's `val_predictions.csv`.
 - `summarize-val-error-overlap.py`: creates a stable validation error pool
 diagnostic report from comparable Experiment Runs.
+- `audit-val-image-features.py`: creates image-statistic and dHash diagnostics
+for an Experiment Run's validation images.

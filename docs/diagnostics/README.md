@@ -8,3 +8,13 @@ Generated reports may depend on ignored Experiment Run artifacts under
 `results/runs/`. Keep report inputs reproducible through documented `just`
 recipes and keep bulky generated assets out of this directory unless they are
 needed for durable review.
+
+Image feature diagnostics require an active runtime with `opencv-python-headless`
+installed, such as the platform or CUDA training dependency set.
+
+Current reports:
+
+- `efficientnet-b0-stable-error-pool.*`: fixed-split EfficientNet-B0 error
+  overlap across three training seeds.
+- `efficientnet-b0-val-image-features.*`: image statistics and dHash
+  duplicate diagnostics for the fixed-split EfficientNet-B0 validation set.
