@@ -39,6 +39,7 @@ The repository uses `uv` for local development tooling such as Jupytext. Runtime
 | `main.py` | Platform-facing prediction entry point. |
 | `train.py` | Baseline training script. |
 | `requirements.txt` | pip runtime dependency set for platform runs. |
+| `requirements-train-cu124.txt` | pip dependency set for CUDA 12.4 training runs. |
 | `scripts/` | Small helper scripts used by documented commands. |
 | `docs/` | Durable project documentation and conventions. |
 | `docs/adr/` | Optional architecture decision records. |
@@ -60,8 +61,10 @@ just agent <cmd>  # run a command with workspace-local caches
 - `main.py` and `train.py` contain the official-style CNN baseline.
 - Training data is expected under `datasets/6a39ed934d7b489daf5f80a4-momodel/train/`.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
+- CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 
 ## Open Loops
 
 - [ ] Replace placeholder `justfile` recipes with real validation commands.
 - [ ] Add a smoke test for the `predict()` interface once a model artifact exists.
+- [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.
