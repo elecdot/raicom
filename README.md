@@ -21,13 +21,16 @@ Prerequisites:
 - Python 3.9.5 for platform-compatibility checks
 
 ```bash
-uv sync --dev
-python -m pip install -r requirements.txt
 just setup
 just check
 ```
 
-The repository uses `uv` for local development tooling such as Jupytext. Runtime dependencies for momodel submission are listed separately in `requirements.txt` so they can be installed with `pip` on the platform.
+The repository uses `uv` for local development tooling such as Jupytext.
+`just setup` syncs only that local tool layer. Runtime dependencies remain
+explicit pip-managed dependency sets:
+
+- Platform CPU runtime: `python -m pip install -r requirements.txt`
+- CUDA training runtime: `python -m pip install -r requirements-train-cu124.txt`
 
 ## Repo Map
 
@@ -53,7 +56,11 @@ Prefer repository commands over ad hoc long commands:
 
 ```bash
 just doctor       # show workspace status and recipes
+just setup        # sync uv-managed local development tools
 just check        # run lightweight non-training checks
+just fmt          # format maintained Python sources
+just lint         # lint maintained Python sources
+just test         # run lightweight pytest tests
 just train        # run baseline training in the active GPU runtime
 just agent <cmd>  # run a command with workspace-local caches
 ```
@@ -68,7 +75,7 @@ just agent <cmd>  # run a command with workspace-local caches
 - `predict()` receives `cv2.imread` BGR input and converts it to RGB before model inference.
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
-- `just check` verifies the uv lock, Python syntax, local training data layout, and submission entrypoint drift without installing model runtime dependencies or training.
+- `just check` verifies the uv lock, lint, lightweight tests, Python syntax, local training data layout, and submission entrypoint drift without installing model runtime dependencies or training.
 - `train.py` is a CLI baseline training driver; `just train` requires CUDA and writes `results/model_sample.pth` by default.
 
 ## Open Loops

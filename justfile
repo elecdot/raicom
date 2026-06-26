@@ -6,7 +6,11 @@ default:
 
 # Prepare the workspace.
 setup:
-    @printf 'Run `uv sync --dev` for local development tools.\n'
+    @./scripts/agent-env.sh uv sync --dev
+    @printf '\nRuntime dependency sets are intentionally not installed by `just setup`.\n'
+    @printf 'Platform CPU runtime: python -m pip install -r requirements.txt\n'
+    @printf 'CUDA training runtime: python -m pip install -r requirements-train-cu124.txt\n'
+    @printf 'TODO: validate the CUDA training dependency set on an actual GPU machine.\n'
 
 # Show workspace status.
 doctor:
@@ -17,9 +21,11 @@ doctor:
 # Run lightweight checks that do not install runtime dependencies or train models.
 check:
     @./scripts/agent-env.sh uv lock --check
+    @just lint
     @./scripts/agent-env.sh uv run python -m py_compile main.py train.py weather_model.py
     @./scripts/agent-env.sh uv run python scripts/check-data-layout.py
     @./scripts/agent-env.sh uv run python scripts/check-submission-entrypoint.py
+    @just test
 
 # Run baseline training in the active Python runtime.
 train *args:
@@ -29,22 +35,14 @@ train *args:
 agent *args:
     @./scripts/agent-env.sh {{args}}
 
-# Configure a formatter.
+# Format maintained Python sources.
 fmt:
-    @printf 'No formatter configured yet.\n' >&2
-    @exit 1
+    @./scripts/agent-env.sh uv run ruff format main.py train.py weather_model.py scripts tests
 
-# Configure a linter.
+# Lint maintained Python sources.
 lint:
-    @printf 'No linter configured yet.\n' >&2
-    @exit 1
+    @./scripts/agent-env.sh uv run ruff check main.py train.py weather_model.py scripts tests
 
-# No test suite is configured yet.
+# Run lightweight tests.
 test:
-    @printf 'No tests configured yet.\n' >&2
-    @exit 1
-
-# Configure a build.
-build:
-    @printf 'No build configured yet.\n' >&2
-    @exit 1
+    @./scripts/agent-env.sh uv run pytest -q tests
