@@ -16,6 +16,10 @@ _Avoid_: Class name, label string, weather type
 The labeled images provided for model development before submission.
 _Avoid_: Dataset, train data, local images
 
+**Training Image Root**:
+The Training Set directory that directly contains the four Weather Category subdirectories.
+_Avoid_: Dataset root, archive root, train/train
+
 **Internal Validation Split**:
 A held-out portion of the Training Set used locally to estimate generalization before submitting.
 _Avoid_: Test set, competition set, public score
