@@ -78,7 +78,7 @@ just agent <cmd>  # run a command with workspace-local caches
 - The first runtime dependency set is pinned for Python 3.9 and CPU-capable platform runs.
 - CUDA training has a separate Python 3.9.5 dependency file for CUDA 12.4 GPU environments.
 - `just check` verifies the uv lock, lint, lightweight tests, Python syntax, and local training data layout without installing model runtime dependencies or training.
-- `train.py` is a CLI training driver with `baseline_cnn` as the default Model Candidate; `just train` requires CUDA and writes `results/model_sample.pth` by default.
+- `train.py` is a CLI training driver with `baseline_cnn` as the default Model Candidate; `just train` requires CUDA and writes an Experiment Run under `results/runs/<run-id>/` by default.
 - `just smoke-predict` validates `main.predict()` only after `results/model_sample.pth` exists and the active runtime has platform dependencies installed.
 
 ## Target Workflow
@@ -87,16 +87,15 @@ The initialization work is moving toward a Model Candidate workflow:
 
 - `train.py` remains the single training entry point.
 - `models/` holds Model Candidate definitions, starting with `baseline_cnn`.
-- Each `just train` run will create an Experiment Run under `results/runs/<run-id>/`.
-- Each Experiment Run will write `model.pth`, `metadata.json`, and `metrics.json`.
-- `model.pth` will contain the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
+- Each `just train` run creates an Experiment Run under `results/runs/<run-id>/`.
+- Each Experiment Run writes `model.pth`, `metadata.json`, and `metrics.json`.
+- `model.pth` contains the best Internal Validation Macro F1 weights, not necessarily the final epoch weights.
 - `docs/experiments/README.md` is the manual review log for notable Experiment Runs.
 - `just promote-submission <artifact>` will make a selected Model Artifact the fixed Submission Artifact at `results/model_sample.pth`.
 - `just confirm-submission` will provide a pre-submission checklist separate from `just check`.
 
 ## Open Loops
 
-- [ ] Change training output to `results/runs/<run-id>/`.
 - [ ] Implement `promote-submission` and `confirm-submission`.
 - [ ] Run `just smoke-predict` after producing `results/model_sample.pth`.
 - [ ] Validate `requirements-train-cu124.txt` on an actual GPU training machine.

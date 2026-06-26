@@ -20,3 +20,12 @@ def test_baseline_cnn_candidate_is_registered():
 
     assert '"baseline_cnn"' in registry_source or "baseline_cnn.NAME" in registry_source
     assert "get_model_candidate" in registry_source
+
+
+def test_training_writes_experiment_run_outputs():
+    train_source = (ROOT / "train.py").read_text(encoding="utf-8")
+
+    assert "results/runs" in train_source
+    assert "metadata.json" in train_source
+    assert "metrics.json" in train_source
+    assert "best_val_macro_f1" in train_source

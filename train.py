@@ -1,5 +1,7 @@
 import argparse
+import json
 from pathlib import Path
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -12,7 +14,7 @@ from models.registry import available_model_candidates, get_model_candidate
 
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_TRAIN_DIR = REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
-DEFAULT_OUTPUT = REPO_ROOT / "results/model_sample.pth"
+DEFAULT_RUNS_DIR = REPO_ROOT / "results/runs"
 DEFAULT_MODEL = "baseline_cnn"
 
 
@@ -25,7 +27,16 @@ def parse_args():
         help="Model Candidate to train.",
     )
     parser.add_argument("--train-dir", type=Path, default=DEFAULT_TRAIN_DIR)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--run-id",
+        help="Experiment Run identifier. Defaults to timestamp-model-seed.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Override model artifact path. Defaults to results/runs/<run-id>/model.pth.",
+    )
     parser.add_argument(
         "--image-size",
         type=int,
@@ -50,6 +61,18 @@ def parse_args():
         help="Fail fast unless the resolved training device is CUDA.",
     )
     return parser.parse_args()
+
+
+def default_run_id(model_candidate, seed):
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return f"{timestamp}-{model_candidate}-seed{seed}"
+
+
+def resolve_run_paths(args, candidate):
+    run_id = args.run_id or default_run_id(candidate.name, args.seed)
+    run_dir = DEFAULT_RUNS_DIR / run_id
+    artifact_path = args.output or run_dir / "model.pth"
+    return run_id, run_dir, artifact_path
 
 
 def resolve_device(device_name):
@@ -129,22 +152,45 @@ def evaluate(model, loader, criterion, device):
     return loss_sum / total, correct / total, macro_f1
 
 
+def state_dict_snapshot(model):
+    return {
+        name: value.detach().cpu().clone() for name, value in model.state_dict().items()
+    }
+
+
+def write_json(path, payload):
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def train(args):
     candidate = get_model_candidate(args.model)
     image_size = args.image_size or candidate.image_size
+    run_id, run_dir, artifact_path = resolve_run_paths(args, candidate)
+    metrics_path = run_dir / "metrics.json"
+    metadata_path = run_dir / "metadata.json"
     device = resolve_device(args.device)
     if args.require_cuda and device.type != "cuda":
         raise RuntimeError("CUDA is required for this training run.")
+    print("run_id:", run_id)
     print("model:", candidate.name)
     print("device:", device)
     print("image_size:", image_size)
     print("train_dir:", args.train_dir)
-    print("output:", args.output)
+    print("run_dir:", run_dir)
+    print("output:", artifact_path)
 
     train_loader, val_loader = build_loaders(args, candidate, device)
     model = candidate.build_model().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    metrics = []
+    best_epoch = None
+    best_val_macro_f1 = None
+    best_state = None
+    final_val_macro_f1 = None
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -162,6 +208,21 @@ def train(args):
         train_loss = running_loss / total
         train_acc = correct / total
         val_loss, val_acc, val_macro_f1 = evaluate(model, val_loader, criterion, device)
+        final_val_macro_f1 = val_macro_f1
+        metrics.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_acc": train_acc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+                "val_macro_f1": val_macro_f1,
+            }
+        )
+        if best_val_macro_f1 is None or val_macro_f1 > best_val_macro_f1:
+            best_epoch = epoch
+            best_val_macro_f1 = val_macro_f1
+            best_state = state_dict_snapshot(model)
         print(
             f"Epoch {epoch}/{args.epochs}  "
             f"train_loss={train_loss:.4f}  train_acc={train_acc:.4f}  "
@@ -169,8 +230,32 @@ def train(args):
             f"val_macro_f1={val_macro_f1:.4f}"
         )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), args.output)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(best_state, artifact_path)
+    write_json(metrics_path, {"epochs": metrics})
+    write_json(
+        metadata_path,
+        {
+            "run_id": run_id,
+            "model_candidate": candidate.name,
+            "seed": args.seed,
+            "image_size": image_size,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "lr": args.lr,
+            "val_ratio": args.val_ratio,
+            "train_dir": str(args.train_dir),
+            "device": str(device),
+            "best_epoch": best_epoch,
+            "best_val_macro_f1": best_val_macro_f1,
+            "final_val_macro_f1": final_val_macro_f1,
+            "artifact": str(artifact_path),
+            "metrics": str(metrics_path),
+        },
+    )
+    print("best_epoch:", best_epoch)
+    print("best_val_macro_f1:", f"{best_val_macro_f1:.4f}")
 
 
 if __name__ == "__main__":
