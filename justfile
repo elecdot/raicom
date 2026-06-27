@@ -54,6 +54,10 @@ split-duplicate-leakage *args:
 logit-bias-diagnostic *args:
     @./scripts/agent-env.sh uv run python scripts/diagnose-logit-bias.py {{args}}
 
+# Compare Experiment Run metrics and validation predictions.
+compare-runs *args:
+    @./scripts/agent-env.sh uv run python scripts/compare-runs.py {{args}}
+
 # Smoke-test the platform predict interface in the active runtime.
 smoke-predict *args:
     @python scripts/smoke-predict.py {{args}}

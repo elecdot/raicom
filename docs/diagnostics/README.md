@@ -9,6 +9,10 @@ Generated reports may depend on ignored Experiment Run artifacts under
 recipes and keep bulky generated assets out of this directory unless they are
 needed for durable review.
 
+Use `just compare-runs` for ad hoc Experiment Run comparisons. Save generated
+comparison reports here only when the comparison is durable evidence for a
+decision.
+
 Image feature diagnostics require an active runtime with `opencv-python-headless`
 installed, such as the platform or CUDA training dependency set.
 

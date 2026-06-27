@@ -68,6 +68,7 @@ just val-image-features # audit fixed-split validation image features
 just train-image-features # audit full Training Set image features
 just split-duplicate-leakage # audit duplicate leakage across fixed split
 just logit-bias-diagnostic # diagnose fixed-split class-wise logit bias
+just compare-runs <run-a> <run-b> # compare run metrics and predictions
 just promote-submission <artifact> # promote a model artifact for platform loading
 just confirm-submission # print the pre-submission checklist
 just smoke-predict # validate predict() after a model artifact exists

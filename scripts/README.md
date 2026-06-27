@@ -38,3 +38,6 @@ diagnostics for the full Training Set.
 groups that cross a train/validation split boundary.
 - `diagnose-logit-bias.py`: grid-searches class-wise logit bias on validation
 prediction logits for diagnostic calibration analysis.
+- `compare-runs.py`: compares Experiment Run metrics and validation
+predictions, including pairwise correction/regression counts when runs share
+validation paths.
