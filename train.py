@@ -139,7 +139,7 @@ def parse_args():
     )
     parser.add_argument(
         "--augmentation",
-        choices=("none", "mild", "stronger"),
+        choices=("none", "mild", "targeted", "stronger"),
         default="mild",
         help="Training augmentation recipe.",
     )
@@ -285,6 +285,41 @@ def build_transforms(args, candidate):
                     contrast=0.15,
                     saturation=0.10,
                     hue=0.02,
+                ),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
+    elif args.augmentation == "targeted":
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    image_size,
+                    scale=(0.72, 1.0),
+                    ratio=(0.88, 1.14),
+                    interpolation=interpolation,
+                ),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomApply(
+                    [
+                        transforms.ColorJitter(
+                            brightness=0.20,
+                            contrast=0.20,
+                            saturation=0.14,
+                            hue=0.02,
+                        )
+                    ],
+                    p=0.80,
+                ),
+                transforms.RandomAutocontrast(p=0.06),
+                transforms.RandomApply(
+                    [
+                        transforms.GaussianBlur(
+                            kernel_size=3,
+                            sigma=(0.1, 1.0),
+                        )
+                    ],
+                    p=0.06,
                 ),
                 transforms.ToTensor(),
                 normalize,
