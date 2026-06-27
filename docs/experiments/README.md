@@ -65,11 +65,29 @@ dHash group-aware split.
 | Run ID | Augmentation | Val Rows | Best Macro F1 | Best Epoch | Decision |
 | --- | --- | ---: | ---: | ---: | --- |
 | `efficientnet-b0-exactdhash-split42-train42-bs32-w4` | `mild` | 991 | 0.9361 | 15 | Keep as the duplicate-aware B0 reference. |
+| `efficientnet-b0-exactdhash-targeted-split42-train42-bs32-w4` | `targeted` | 991 | 0.9177 | 6 | Reject current targeted recipe. |
 | `efficientnet-b0-exactdhash-stronger-split42-train42-bs32-w4` | `stronger` | 991 | 0.9169 | 16 | Reject current stronger recipe. |
 
-The `stronger` recipe used the same validation paths as the mild exact-dHash
-run. It corrected 15 mild-run errors but introduced 25 new errors, with the
-largest per-class F1 drops on `rainy` and `snowy`.
+Both stronger recipes used the same validation paths as the mild exact-dHash
+run and underperformed. `targeted` corrected 16 mild-run errors but introduced
+27 new errors; `stronger` corrected 15 mild-run errors but introduced 25 new
+errors. Stop increasing augmentation strength on B0 for now and keep `mild` as
+the training reference.
+
+### Objective And Weighting Ablation
+
+Seed 42 only. This group compares loss-side settings on the exact dHash
+group-aware split with `mild` augmentation.
+
+| Run ID | Class Weights | Label Smoothing | Best Macro F1 | Best Epoch | Decision |
+| --- | --- | ---: | ---: | ---: | --- |
+| `efficientnet-b0-exactdhash-split42-train42-bs32-w4` | `inverse-sqrt` | 0.05 | 0.9361 | 15 | Keep as the duplicate-aware B0 reference. |
+| `efficientnet-b0-exactdhash-ls0-split42-train42-bs32-w4` | `inverse-sqrt` | 0.00 | 0.9230 | 19 | Reject removing label smoothing. |
+| `efficientnet-b0-exactdhash-cw-none-split42-train42-bs32-w4` | `none` | 0.05 | 0.9225 | 14 | Reject removing class weights. |
+
+Removing label smoothing or class weights did not improve the minority Weather
+Categories on this split. Keep inverse-sqrt class weights and label smoothing
+0.05 as the B0 reference loss settings.
 
 ### Validation Error Review
 
