@@ -101,3 +101,22 @@ Review label counts: `model-error` 10, `hard-example` 5, `source-artifact` 3,
 `ambiguous` 2, `mislabel` 2, `hard-model` 1. Treat this Validation Error
 Review as low-confidence qualitative evidence, not as Training Set relabeling
 or an authoritative correction source.
+
+## EfficientNet-B3
+
+Shared recipe unless noted: pretrained TorchVision `efficientnet_b3`, mild
+augmentation, inverse-sqrt class weights, label smoothing 0.05, AdamW, cosine
+scheduler, CUDA AMP.
+
+### Capacity Check
+
+Seed 42 only. This group checks whether a larger same-family TorchVision Model
+Candidate improves over the B0 reference.
+
+| Run ID | Split Strategy | Val Rows | Best Macro F1 | Best Epoch | Decision |
+| --- | --- | ---: | ---: | ---: | --- |
+| `efficientnet-b3-split42-train42-bs32-w4` | `stratified_shuffle` | 1000 | 0.9259 | 3 | Reject as a direct replacement for B0 on the historical split. |
+
+The first B3 run underperformed the B0 historical split reference despite
+larger capacity. It corrected some B0 errors but introduced more regressions,
+so B3 needs duplicate-aware validation before further model-side investment.
