@@ -57,6 +57,20 @@ membership. Its lower Macro F1 suggests the historical split may be mildly
 optimistic, but the result is close enough that the B0 baseline remains
 credible.
 
+### Augmentation Ablation
+
+Seed 42 only. This group compares training augmentation recipes on the exact
+dHash group-aware split.
+
+| Run ID | Augmentation | Val Rows | Best Macro F1 | Best Epoch | Decision |
+| --- | --- | ---: | ---: | ---: | --- |
+| `efficientnet-b0-exactdhash-split42-train42-bs32-w4` | `mild` | 991 | 0.9361 | 15 | Keep as the duplicate-aware B0 reference. |
+| `efficientnet-b0-exactdhash-stronger-split42-train42-bs32-w4` | `stronger` | 991 | 0.9169 | 16 | Reject current stronger recipe. |
+
+The `stronger` recipe used the same validation paths as the mild exact-dHash
+run. It corrected 15 mild-run errors but introduced 25 new errors, with the
+largest per-class F1 drops on `rainy` and `snowy`.
+
 ### Validation Error Review
 
 The `efficientnet-b0-seed42-bs32-w4` high-confidence Validation Error Audit
