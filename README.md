@@ -87,6 +87,7 @@ just agent <cmd>  # run a command with workspace-local caches
 - `just check` verifies the uv lock, lint, lightweight tests, Python syntax, and local training data layout without installing model runtime dependencies or training.
 - `train.py` is a CLI training driver with `efficientnet_b0` as the default Model Candidate; `just train` requires CUDA and writes an Experiment Run under `results/runs/<run-id>/` by default.
 - `train.py` defaults to the historical stratified shuffle split and also supports an optional `--split-strategy exact_dhash_group` mode backed by `docs/diagnostics/train-image-features.csv`.
+- `train.py` supports `--augmentation none|mild|stronger`; `mild` remains the default and `stronger` is an explicit data-engineering experiment setting.
 - The current training mainline uses TorchVision candidates and does not introduce `timm` as a runtime dependency.
 - `just promote-submission <artifact>` copies a selected Model Artifact to the fixed Submission Artifact path: `results/model_sample.pth`.
 - `just confirm-submission` checks for the Submission Artifact and prints the manual Submission Confirmation checklist.

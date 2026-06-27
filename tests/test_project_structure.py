@@ -53,6 +53,8 @@ def test_training_writes_experiment_run_outputs():
     assert "train_seed" in train_source
     assert "--split-strategy" in train_source
     assert "exact_dhash_group" in train_source
+    assert '"stronger"' in train_source
+    assert "RandomErasing" in train_source
     assert "num_workers" in train_source
     assert "prefetch_factor" in train_source
     assert "train_seconds" in train_source

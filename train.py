@@ -139,7 +139,7 @@ def parse_args():
     )
     parser.add_argument(
         "--augmentation",
-        choices=("none", "mild"),
+        choices=("none", "mild", "stronger"),
         default="mild",
         help="Training augmentation recipe.",
     )
@@ -270,7 +270,7 @@ def build_transforms(args, candidate):
     )
     if args.augmentation == "none":
         train_transform = eval_transform
-    else:
+    elif args.augmentation == "mild":
         train_transform = transforms.Compose(
             [
                 transforms.RandomResizedCrop(
@@ -290,6 +290,50 @@ def build_transforms(args, candidate):
                 normalize,
             ]
         )
+    elif args.augmentation == "stronger":
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    image_size,
+                    scale=(0.65, 1.0),
+                    ratio=(0.85, 1.18),
+                    interpolation=interpolation,
+                ),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomApply(
+                    [
+                        transforms.ColorJitter(
+                            brightness=0.25,
+                            contrast=0.25,
+                            saturation=0.20,
+                            hue=0.03,
+                        )
+                    ],
+                    p=0.85,
+                ),
+                transforms.RandomAutocontrast(p=0.10),
+                transforms.RandomGrayscale(p=0.04),
+                transforms.RandomApply(
+                    [
+                        transforms.GaussianBlur(
+                            kernel_size=3,
+                            sigma=(0.1, 1.5),
+                        )
+                    ],
+                    p=0.12,
+                ),
+                transforms.ToTensor(),
+                transforms.RandomErasing(
+                    p=0.10,
+                    scale=(0.02, 0.08),
+                    ratio=(0.3, 3.3),
+                    value="random",
+                ),
+                normalize,
+            ]
+        )
+    else:
+        raise ValueError(f"unknown augmentation recipe: {args.augmentation}")
     return train_transform, eval_transform
 
 
