@@ -22,5 +22,7 @@ Current reports:
   for the full Training Set.
 - `split42-duplicate-leakage.*`: exact and near-duplicate dHash group leakage
   across the fixed Internal Validation Split.
+- `efficientnet-b0-exactdhash-split42-duplicate-leakage.*`: duplicate leakage
+  check for the B0 exact dHash group-aware split run.
 - `efficientnet-b0-logit-bias.*`: in-split class-wise logit bias diagnostic
   across fixed-split EfficientNet-B0 runs.

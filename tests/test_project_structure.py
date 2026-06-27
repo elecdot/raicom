@@ -51,6 +51,8 @@ def test_training_writes_experiment_run_outputs():
     assert "best_val_macro_f1" in train_source
     assert "split_seed" in train_source
     assert "train_seed" in train_source
+    assert "--split-strategy" in train_source
+    assert "exact_dhash_group" in train_source
     assert "num_workers" in train_source
     assert "prefetch_factor" in train_source
     assert "train_seconds" in train_source

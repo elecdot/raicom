@@ -2,6 +2,7 @@ import argparse
 import csv
 import json
 import time
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +24,7 @@ from models.registry import available_model_candidates, get_model_candidate
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_TRAIN_DIR = REPO_ROOT / "datasets/6a39ed934d7b489daf5f80a4-momodel/train"
 DEFAULT_RUNS_DIR = REPO_ROOT / "results/runs"
+DEFAULT_SPLIT_FEATURES_CSV = REPO_ROOT / "docs/diagnostics/train-image-features.csv"
 DEFAULT_MODEL = "efficientnet_b0"
 
 
@@ -34,6 +36,7 @@ class LoaderBundle:
     train_counts: dict[str, int]
     val_counts: dict[str, int]
     val_paths: list[str]
+    split_summary: dict[str, object]
 
 
 def parse_args():
@@ -73,6 +76,24 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--val-ratio", type=float, default=0.2)
+    parser.add_argument(
+        "--split-strategy",
+        choices=("stratified_shuffle", "exact_dhash_group"),
+        default="stratified_shuffle",
+        help=(
+            "Internal Validation Split strategy. exact_dhash_group keeps exact "
+            "dHash collision groups on one side of the split."
+        ),
+    )
+    parser.add_argument(
+        "--split-features-csv",
+        type=Path,
+        default=DEFAULT_SPLIT_FEATURES_CSV,
+        help=(
+            "Full Training Set image feature CSV used by "
+            "--split-strategy exact_dhash_group."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--split-seed",
@@ -289,6 +310,139 @@ def count_by_class(targets, indices, labels):
     return counts
 
 
+def read_exact_dhash_groups(features_csv):
+    features_csv = (
+        features_csv if features_csv.is_absolute() else REPO_ROOT / features_csv
+    )
+    if not features_csv.is_file():
+        raise FileNotFoundError(f"missing split features CSV: {relative(features_csv)}")
+
+    required_fields = {"path", "read_ok", "dhash", "exact_dhash_group_size"}
+    path_to_group = {}
+    with features_csv.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = sorted(required_fields - set(reader.fieldnames or []))
+        if missing:
+            raise ValueError(
+                f"{relative(features_csv)} is missing required fields: "
+                + ", ".join(missing)
+            )
+        for row in reader:
+            image_path = row["path"]
+            if image_path in path_to_group:
+                raise ValueError(
+                    f"{relative(features_csv)} contains duplicate path: {image_path}"
+                )
+            exact_group_size = int(row["exact_dhash_group_size"] or 0)
+            if row["read_ok"] == "1" and exact_group_size > 1 and row["dhash"]:
+                group_id = f"dhash:{row['dhash']}"
+            else:
+                group_id = f"path:{image_path}"
+            path_to_group[image_path] = group_id
+    if not path_to_group:
+        raise ValueError(f"empty split features CSV: {relative(features_csv)}")
+    return path_to_group
+
+
+def majority_target(targets, indices):
+    counts = Counter(targets[index] for index in indices)
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+
+
+def stratified_split_indices(targets, val_ratio, split_seed):
+    splitter = StratifiedShuffleSplit(
+        n_splits=1,
+        test_size=val_ratio,
+        random_state=split_seed,
+    )
+    indices = list(range(len(targets)))
+    train_indices, val_indices = next(splitter.split(indices, targets))
+    return (
+        train_indices.tolist(),
+        val_indices.tolist(),
+        {
+            "strategy": "stratified_shuffle",
+        },
+    )
+
+
+def exact_dhash_group_split_indices(args, image_folder, split_seed):
+    path_to_group = read_exact_dhash_groups(args.split_features_csv)
+    group_to_indices = defaultdict(list)
+    missing_paths = []
+    for index, (image_path, _) in enumerate(image_folder.samples):
+        sample_path = relative(image_path)
+        group_id = path_to_group.get(sample_path)
+        if group_id is None:
+            missing_paths.append(sample_path)
+            continue
+        group_to_indices[group_id].append(index)
+    if missing_paths:
+        example = ", ".join(missing_paths[:3])
+        raise ValueError(
+            "split features CSV is missing Training Set paths, for example: " + example
+        )
+
+    group_ids = sorted(group_to_indices)
+    group_labels = [
+        majority_target(image_folder.targets, group_to_indices[group_id])
+        for group_id in group_ids
+    ]
+    splitter = StratifiedShuffleSplit(
+        n_splits=1,
+        test_size=args.val_ratio,
+        random_state=split_seed,
+    )
+    group_positions = list(range(len(group_ids)))
+    train_group_positions, val_group_positions = next(
+        splitter.split(group_positions, group_labels)
+    )
+    train_indices = sorted(
+        index
+        for position in train_group_positions.tolist()
+        for index in group_to_indices[group_ids[position]]
+    )
+    val_indices = sorted(
+        index
+        for position in val_group_positions.tolist()
+        for index in group_to_indices[group_ids[position]]
+    )
+
+    exact_groups = {
+        group_id: indices
+        for group_id, indices in group_to_indices.items()
+        if group_id.startswith("dhash:")
+    }
+    mixed_label_group_count = sum(
+        len({image_folder.targets[index] for index in indices}) > 1
+        for indices in exact_groups.values()
+    )
+    summary = {
+        "strategy": "exact_dhash_group",
+        "features_csv": relative(args.split_features_csv),
+        "group_count": len(group_to_indices),
+        "exact_dhash_group_count": len(exact_groups),
+        "exact_dhash_group_sample_count": sum(
+            len(indices) for indices in exact_groups.values()
+        ),
+        "mixed_label_exact_dhash_group_count": mixed_label_group_count,
+        "max_group_size": max(len(indices) for indices in group_to_indices.values()),
+    }
+    return train_indices, val_indices, summary
+
+
+def split_indices(args, image_folder, split_seed):
+    if args.split_strategy == "stratified_shuffle":
+        return stratified_split_indices(
+            image_folder.targets,
+            args.val_ratio,
+            split_seed,
+        )
+    if args.split_strategy == "exact_dhash_group":
+        return exact_dhash_group_split_indices(args, image_folder, split_seed)
+    raise ValueError(f"unknown split strategy: {args.split_strategy}")
+
+
 def build_loaders(args, candidate, device, train_seed, split_seed):
     train_transform, eval_transform = build_transforms(args, candidate)
     train_full_set = datasets.ImageFolder(args.train_dir, transform=train_transform)
@@ -301,15 +455,11 @@ def build_loaders(args, candidate, device, train_seed, split_seed):
         )
     print("class_to_idx:", eval_full_set.class_to_idx)
 
-    splitter = StratifiedShuffleSplit(
-        n_splits=1,
-        test_size=args.val_ratio,
-        random_state=split_seed,
+    train_indices, val_indices, split_summary = split_indices(
+        args,
+        eval_full_set,
+        split_seed,
     )
-    indices = list(range(len(eval_full_set.targets)))
-    train_indices, val_indices = next(splitter.split(indices, eval_full_set.targets))
-    train_indices = train_indices.tolist()
-    val_indices = val_indices.tolist()
 
     train_set = Subset(train_full_set, train_indices)
     val_set = Subset(eval_full_set, val_indices)
@@ -345,6 +495,7 @@ def build_loaders(args, candidate, device, train_seed, split_seed):
         ),
         val_counts=count_by_class(eval_full_set.targets, val_indices, actual_labels),
         val_paths=[relative(eval_full_set.samples[index][0]) for index in val_indices],
+        split_summary=split_summary,
     )
 
 
@@ -558,6 +709,7 @@ def train(args):
     print("amp_enabled:", amp_enabled)
     print("train_seed:", train_seed)
     print("split_seed:", split_seed)
+    print("split_strategy:", args.split_strategy)
     print("image_size:", image_size)
     print("train_dir:", args.train_dir)
     print("run_dir:", run_dir)
@@ -591,6 +743,7 @@ def train(args):
 
     print("train_counts:", loaders.train_counts)
     print("val_counts:", loaders.val_counts)
+    print("split_summary:", loaders.split_summary)
     print("class_weights:", class_weights)
 
     for epoch in range(1, args.epochs + 1):
@@ -737,7 +890,13 @@ def train(args):
             "class_weighting": args.class_weights,
             "class_weights": class_weights,
             "label_smoothing": args.label_smoothing,
-            "split_strategy": "stratified_shuffle",
+            "split_strategy": args.split_strategy,
+            "split_features_csv": (
+                str(args.split_features_csv)
+                if args.split_strategy == "exact_dhash_group"
+                else None
+            ),
+            "split_summary": loaders.split_summary,
             "val_ratio": args.val_ratio,
             "train_counts_by_class": loaders.train_counts,
             "val_counts_by_class": loaders.val_counts,

@@ -41,6 +41,22 @@ Seed 42 only. This group compares local throughput settings, not model design.
 | `efficientnet-b0-seed42-bs64-w4` | 64 | 4 | yes | 0.9322 | 13 | Keep as throughput reference; do not promote over bs32/w4. |
 | `efficientnet-b0-seed42-bs96-w4` | 96 | 4 | no | 0.9217 | 6 | Reject as current B0 training setting. |
 
+### Split Strategy Check
+
+Seed 42 only. This group compares Internal Validation Split construction, not
+model design.
+
+| Run ID | Split Strategy | Val Rows | Best Macro F1 | Best Epoch | Decision |
+| --- | --- | ---: | ---: | ---: | --- |
+| `efficientnet-b0-seed42-bs32-w4` | `stratified_shuffle` | 1000 | 0.9392 | 14 | Keep as historical B0 baseline. |
+| `efficientnet-b0-exactdhash-split42-train42-bs32-w4` | `exact_dhash_group` | 991 | 0.9361 | 15 | Keep as the more duplicate-aware B0 validation check. |
+
+The exact dHash group-aware split removed exact dHash duplicate leakage by
+grouping 174 exact dHash collision groups before assigning train/validation
+membership. Its lower Macro F1 suggests the historical split may be mildly
+optimistic, but the result is close enough that the B0 baseline remains
+credible.
+
 ### Validation Error Review
 
 The `efficientnet-b0-seed42-bs32-w4` high-confidence Validation Error Audit
