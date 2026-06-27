@@ -427,7 +427,7 @@ def changes_table(changes, title):
 
 def write_markdown(path, labels, summary_rows, changes, outputs, args):
     lines = [
-        "# EfficientNet-B0 Logit Bias Diagnostic",
+        "# Class-Wise Logit Bias Diagnostic",
         "",
         "Class-wise logit bias was selected on the same Internal Validation "
         "Split used for scoring each row. Treat this as an in-split diagnostic "

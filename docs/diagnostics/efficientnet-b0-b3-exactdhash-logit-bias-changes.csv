@@ -1,0 +1,14 @@
+run,path,true_label,pred_before,pred_after,correct_before,correct_after,confidence_before,confidence_after,change_type
+b0_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_00332.jpg,cloudy,cloudy,sunny,1,0,0.515970,0.428012,regressed
+b0_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01874.jpg,cloudy,cloudy,sunny,1,0,0.471250,0.567014,regressed
+b0_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00184.jpg,sunny,cloudy,sunny,0,1,0.529073,0.465938,corrected
+b0_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00222.jpg,sunny,cloudy,sunny,0,1,0.545800,0.456705,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01194.jpg,cloudy,cloudy,rainy,1,0,0.595011,0.541737,regressed
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01710.jpg,cloudy,cloudy,rainy,1,0,0.521265,0.604671,regressed
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00177.jpg,rainy,sunny,rainy,0,1,0.372621,0.398759,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00189.jpg,rainy,snowy,rainy,0,1,0.392855,0.613342,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00220.jpg,rainy,cloudy,rainy,0,1,0.606838,0.485234,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00231.jpg,rainy,cloudy,rainy,0,1,0.591536,0.551155,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00060.jpg,sunny,cloudy,sunny,0,1,0.473388,0.492531,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00895.jpg,sunny,snowy,sunny,0,1,0.516675,0.637607,corrected
+b3_exact,datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_01445.jpg,sunny,cloudy,sunny,0,1,0.490380,0.465689,corrected

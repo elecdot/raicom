@@ -1,0 +1,5 @@
+baseline_run_id,candidate_run_id,label,baseline_f1,candidate_f1,delta_f1
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet-b3-exactdhash-split42-train42-bs32-w4,cloudy,0.9345372460496614,0.9252013808975834,-0.00933586515207796
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet-b3-exactdhash-split42-train42-bs32-w4,rainy,0.9017341040462428,0.8926553672316384,-0.00907873681460436
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet-b3-exactdhash-split42-train42-bs32-w4,snowy,0.9681528662420382,0.925,-0.04315286624203818
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet-b3-exactdhash-split42-train42-bs32-w4,sunny,0.9399477806788512,0.9381443298969072,-0.0018034507819439938

@@ -1,0 +1,2 @@
+baseline_run_id,candidate_run_id,same_val_paths,common_paths,baseline_only_paths,candidate_only_paths,both_correct,baseline_correct_candidate_wrong,baseline_wrong_candidate_correct,both_wrong,same_prediction,different_prediction
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet-b3-exactdhash-split42-train42-bs32-w4,1,991,0,0,901,27,18,45,946,45

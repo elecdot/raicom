@@ -116,7 +116,12 @@ Candidate improves over the B0 reference.
 | Run ID | Split Strategy | Val Rows | Best Macro F1 | Best Epoch | Decision |
 | --- | --- | ---: | ---: | ---: | --- |
 | `efficientnet-b3-split42-train42-bs32-w4` | `stratified_shuffle` | 1000 | 0.9259 | 3 | Reject as a direct replacement for B0 on the historical split. |
+| `efficientnet-b3-exactdhash-split42-train42-bs32-w4` | `exact_dhash_group` | 991 | 0.9203 | 9 | Reject as a direct replacement for B0 on the duplicate-aware split. |
 
-The first B3 run underperformed the B0 historical split reference despite
-larger capacity. It corrected some B0 errors but introduced more regressions,
-so B3 needs duplicate-aware validation before further model-side investment.
+Both B3 runs underperformed their B0 references despite larger capacity. On the
+duplicate-aware split, B3 corrected 18 B0 errors but introduced 27 regressions,
+with per-class F1 lower for all four labels and the largest drop on `snowy`
+(-0.0432). Class-wise logit bias improved B3 only to 0.9286 as an in-split
+upper bound, still below the unmodified B0 duplicate-aware reference at 0.9361.
+Do not continue TorchVision B3 as a direct replacement unless a new training
+recipe changes this evidence.

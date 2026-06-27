@@ -1,0 +1,3 @@
+run_id,model_candidate,split_strategy,augmentation,class_weighting,label_smoothing,val_rows,best_macro_f1,best_accuracy,best_epoch,final_macro_f1
+efficientnet-b0-exactdhash-split42-train42-bs32-w4,efficientnet_b0,exact_dhash_group,mild,inverse-sqrt,0.05,991,0.9360929992541984,0.9364278506559032,15,0.922876236407718
+efficientnet-b3-exactdhash-split42-train42-bs32-w4,efficientnet_b3,exact_dhash_group,mild,inverse-sqrt,0.05,991,0.9202502695065322,0.9273461150353178,9,0.9187209147963001
