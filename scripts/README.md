@@ -34,5 +34,7 @@ diagnostic report from comparable Experiment Runs.
 for an Experiment Run's validation images.
 - `audit-train-image-features.py`: creates image-statistic and dHash
 diagnostics for the full Training Set.
+- `audit-split-duplicate-leakage.py`: audits exact and near-duplicate dHash
+groups that cross a train/validation split boundary.
 - `diagnose-logit-bias.py`: grid-searches class-wise logit bias on validation
 prediction logits for diagnostic calibration analysis.

@@ -66,6 +66,7 @@ just train        # run default Model Candidate training in the active GPU runti
 just stable-error-pool # summarize fixed-split validation error overlap
 just val-image-features # audit fixed-split validation image features
 just train-image-features # audit full Training Set image features
+just split-duplicate-leakage # audit duplicate leakage across fixed split
 just logit-bias-diagnostic # diagnose fixed-split class-wise logit bias
 just promote-submission <artifact> # promote a model artifact for platform loading
 just confirm-submission # print the pre-submission checklist

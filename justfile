@@ -46,6 +46,10 @@ val-image-features *args:
 train-image-features *args:
     @python scripts/audit-train-image-features.py {{args}}
 
+# Audit duplicate-group leakage across a train/validation split.
+split-duplicate-leakage *args:
+    @./scripts/agent-env.sh uv run python scripts/audit-split-duplicate-leakage.py {{args}}
+
 # Diagnose class-wise logit bias on fixed-split EfficientNet-B0 runs.
 logit-bias-diagnostic *args:
     @./scripts/agent-env.sh uv run python scripts/diagnose-logit-bias.py {{args}}

@@ -109,6 +109,18 @@ def test_training_image_feature_command_is_documented():
     assert "train-image-features" in diagnostics_readme
 
 
+def test_split_duplicate_leakage_command_is_documented():
+    justfile = (ROOT / "justfile").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
+    diagnostics_readme = (ROOT / "docs/diagnostics/README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "split-duplicate-leakage" in justfile
+    assert "audit-split-duplicate-leakage.py" in scripts_readme
+    assert "split42-duplicate-leakage" in diagnostics_readme
+
+
 def test_logit_bias_diagnostic_command_is_documented():
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "scripts/README.md").read_text(encoding="utf-8")
