@@ -54,6 +54,10 @@ split-duplicate-leakage *args:
 logit-bias-diagnostic *args:
     @./scripts/agent-env.sh uv run python scripts/diagnose-logit-bias.py {{args}}
 
+# Evaluate simple test-time augmentation for an Experiment Run.
+tta-diagnostic *args:
+    @python scripts/evaluate-run-tta.py {{args}}
+
 # Compare Experiment Run metrics and validation predictions.
 compare-runs *args:
     @./scripts/agent-env.sh uv run python scripts/compare-runs.py {{args}}

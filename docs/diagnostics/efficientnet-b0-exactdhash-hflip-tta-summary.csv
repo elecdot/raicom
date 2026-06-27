@@ -1,0 +1,4 @@
+source,macro_f1,accuracy,delta_vs_csv,seconds
+csv_predictions,0.936093,0.936428,0.000000,0.000000
+single_pass_eval,0.936093,0.936428,0.000000,14.374083
+hflip_tta,0.927930,0.931382,-0.008163,29.062433

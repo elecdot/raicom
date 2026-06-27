@@ -34,3 +34,5 @@ Current reports:
   EfficientNet-B0 vs EfficientNet-B3 validation comparison.
 - `efficientnet-b0-b3-exactdhash-logit-bias.*`: in-split class-wise logit
   bias diagnostic for exact dHash group-aware B0/B3 predictions.
+- `efficientnet-b0-exactdhash-hflip-tta.*`: horizontal-flip test-time
+  augmentation diagnostic for the B0 exact dHash group-aware run.

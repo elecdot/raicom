@@ -89,6 +89,13 @@ Removing label smoothing or class weights did not improve the minority Weather
 Categories on this split. Keep inverse-sqrt class weights and label smoothing
 0.05 as the B0 reference loss settings.
 
+### Inference-Time Checks
+
+Seed 42 only. Horizontal-flip TTA on
+`efficientnet-b0-exactdhash-split42-train42-bs32-w4` lowered Macro F1 from
+0.9361 to 0.9279 and changed five validation predictions, all regressions.
+Do not enable hflip TTA for the current B0 reference.
+
 ### Validation Error Review
 
 The `efficientnet-b0-seed42-bs32-w4` high-confidence Validation Error Audit

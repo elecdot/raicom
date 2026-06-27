@@ -1,0 +1,6 @@
+path,true_label,pred_before,pred_after,correct_before,correct_after,confidence_before,change_type
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/cloudy/cloudy_01874.jpg,cloudy,cloudy,sunny,1,0,0.47124966979026794,regressed
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00195.jpg,rainy,rainy,snowy,1,0,0.5283790826797485,regressed
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00215.jpg,rainy,rainy,cloudy,1,0,0.4914267957210541,regressed
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/rainy/rainy_00310.jpg,rainy,rainy,sunny,1,0,0.510046124458313,regressed
+datasets/6a39ed934d7b489daf5f80a4-momodel/train/sunny/sunny_00799.jpg,sunny,sunny,cloudy,1,0,0.4781983494758606,regressed
